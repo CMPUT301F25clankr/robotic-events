@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "815345444006",
+    "project_id": "robotic-events-b7d83",
+    "storage_bucket": "robotic-events-b7d83.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:815345444006:android:6ba2df41bd1bd58c578067",
+        "android_client_info": {
+          "package_name": "com.example.robotic_events_test"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDO3586KSUHaldZRFZOD5U6B3qh5KUcTvE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
