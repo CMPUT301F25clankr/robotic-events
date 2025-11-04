@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/detailImage"
+            android:layout_width="match_parent"
+            android:layout_height="180dp"
+            android:scaleType="centerCrop"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/ic_launcher_foreground" />
+
+        <TextView
+            android:id="@+id/detailTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Event Title"
+            android:textStyle="bold"
+            android:textSize="20sp"
+            android:layout_marginTop="12dp" />
+
+        <TextView
+            android:id="@+id/detailWhen"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="When"
+            android:layout_marginTop="4dp" />
+
+        <TextView
+            android:id="@+id/detailWhere"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Where"
+            android:layout_marginTop="2dp" />
+
+        <TextView
+            android:id="@+id/detailPrice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="$0.00"
+            android:layout_marginTop="2dp" />
+
+        <TextView
+            android:id="@+id/detailStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="open"
+            android:layout_marginTop="2dp" />
+
+        <TextView
+            android:id="@+id/detailCategory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Category"
+            android:layout_marginTop="2dp" />
+
+        <TextView
+            android:id="@+id/detailOrganizer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Organizer"
+            android:layout_marginTop="2dp" />
+
+        <TextView
+            android:id="@+id/detailCapacity"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Capacity"
+            android:layout_marginTop="2dp" />
+
+        <TextView
+            android:id="@+id/detailDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Description goes here"
+            android:layout_marginTop="8dp" />
+    </LinearLayout>
+</ScrollView>

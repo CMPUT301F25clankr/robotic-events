@@ -15,39 +15,56 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
-public class EventRecyclerViewAdapter extends RecyclerView.Adapter<EventRecyclerViewAdapter.ViewHolder> {
+public class EventRecyclerViewAdapter
+        extends RecyclerView.Adapter<EventRecyclerViewAdapter.ViewHolder> {
 
-    private Context context;
-    private ArrayList<Event> events;
+    public interface OnEventClickListener {
+        void onEventClick(Event event, int position, View itemView);
+    }
 
-    public EventRecyclerViewAdapter(Context context, ArrayList<Event> events) {
+    private final Context context;
+    private final ArrayList<Event> events;
+    private final OnEventClickListener onClick;
+    private final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, h:mm a", Locale.getDefault());
+
+    public EventRecyclerViewAdapter(Context context,
+                                    ArrayList<Event> events,
+                                    OnEventClickListener onClick) {
         this.context = context;
         this.events = events;
+        this.onClick = onClick;
     }
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(context)
-                .inflate(R.layout.events_row, parent, false); // your card layout XML
+        View view = LayoutInflater.from(context).inflate(R.layout.events_row, parent, false);
         return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        Event event = events.get(position);
+        Event e = events.get(position);
 
-        holder.eventTitle.setText(event.getTitle());
-        holder.eventLocation.setText(event.getLocation());
+        holder.eventTitle.setText(nullToEmpty(e.getTitle()));
+        holder.eventLocation.setText(nullToEmpty(e.getLocation()));
 
-        // Convert timestamp to readable date later — placeholder for now:
-        holder.eventDateTime.setText(formatDateTime(event.getDateTime()));
+        String when = e.getDateTime() > 0
+                ? sdf.format(new Date(e.getDateTime()))
+                : "";
+        holder.eventDateTime.setText(when);
 
-
-        holder.eventImage.setImageResource(event.getImageResId());
+        if (e.getImageResId() != 0) {
+            holder.eventImage.setImageResource(e.getImageResId());
+        } else {
+            holder.eventImage.setImageResource(android.R.color.transparent);
+        }
 
         holder.itemView.setOnClickListener(v -> {
-            // TODO: open event detail page or show a popup
+            int pos = holder.getAdapterPosition();   // works on all RecyclerView versions
+            if (pos != RecyclerView.NO_POSITION && onClick != null) {
+                onClick.onEventClick(events.get(pos), pos, v);
+            }
         });
     }
 
@@ -56,27 +73,20 @@ public class EventRecyclerViewAdapter extends RecyclerView.Adapter<EventRecycler
         return events.size();
     }
 
-    private String formatDateTime(long timestamp) {
-        Date date = new Date(timestamp);
-        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, h:mm a", Locale.getDefault());
-        return sdf.format(date);
+    private String nullToEmpty(String s) {
+        return s == null ? "" : s;
     }
 
-
     public static class ViewHolder extends RecyclerView.ViewHolder {
-
         ImageView eventImage;
-        TextView eventTitle;
-        TextView eventDateTime;
-        TextView eventLocation;
+        TextView eventTitle, eventDateTime, eventLocation;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-
-            eventImage = itemView.findViewById(R.id.eventImage);
-            eventTitle = itemView.findViewById(R.id.eventTitle);
+            eventImage    = itemView.findViewById(R.id.eventImage);
+            eventTitle    = itemView.findViewById(R.id.eventTitle);
             eventDateTime = itemView.findViewById(R.id.eventDateTime);
-            eventLocation = itemView.findViewById(R.id.eventLocation); // using distance TextView for now
+            eventLocation = itemView.findViewById(R.id.eventLocation);
         }
     }
 }
