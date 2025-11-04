@@ -1,0 +1,124 @@
+Index: app/src/main/res/layout/events_row.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- Row with ripple + no focus stealing -->\n<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n    android:id=\"@+id/eventRowRoot\"\n    android:layout_width=\"match_parent\"\n    android:layout_height=\"wrap_content\"\n    android:orientation=\"horizontal\"\n    android:padding=\"12dp\"\n    android:foreground=\"?attr/selectableItemBackground\"\n    android:clickable=\"true\"\n    android:focusable=\"true\"\n    android:descendantFocusability=\"blocksDescendants\">\n\n    <ImageView\n        android:id=\"@+id/eventImage\"\n        android:layout_width=\"56dp\"\n        android:layout_height=\"56dp\"\n        android:layout_marginEnd=\"12dp\"\n        android:contentDescription=\"@string/app_name\"\n        android:src=\"@drawable/ic_launcher_foreground\" />\n\n    <LinearLayout\n        android:layout_width=\"0dp\"\n        android:layout_height=\"wrap_content\"\n        android:layout_weight=\"1\"\n        android:orientation=\"vertical\">\n\n        <TextView\n            android:id=\"@+id/eventTitle\"\n            android:layout_width=\"match_parent\"\n            android:layout_height=\"wrap_content\"\n            android:text=\"Event Title\"\n            android:textStyle=\"bold\"\n            android:textSize=\"16sp\" />\n\n        <TextView\n            android:id=\"@+id/eventDateTime\"\n            android:layout_width=\"match_parent\"\n            android:layout_height=\"wrap_content\"\n            android:text=\"Jan 01, 1:00 PM\"\n            android:alpha=\"0.85\" />\n\n        <TextView\n            android:id=\"@+id/eventLocation\"\n            android:layout_width=\"match_parent\"\n            android:layout_height=\"wrap_content\"\n            android:text=\"Location\"\n            android:alpha=\"0.85\" />\n    </LinearLayout>\n\n</LinearLayout>\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/res/layout/events_row.xml b/app/src/main/res/layout/events_row.xml
+--- a/app/src/main/res/layout/events_row.xml	(revision 733c9d58b24e704cb623fb1a98a51c9f27d369c5)
++++ b/app/src/main/res/layout/events_row.xml	(date 1762299036335)
+@@ -1,51 +1,84 @@
+ <?xml version="1.0" encoding="utf-8"?>
+-<!-- Row with ripple + no focus stealing -->
+-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+-    android:id="@+id/eventRowRoot"
++<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    android:id="@+id/eventCard"
+     android:layout_width="match_parent"
+     android:layout_height="wrap_content"
+-    android:orientation="horizontal"
+-    android:padding="12dp"
++    android:layout_margin="8dp"
+     android:foreground="?attr/selectableItemBackground"
+     android:clickable="true"
+     android:focusable="true"
+-    android:descendantFocusability="blocksDescendants">
++    app:cardElevation="4dp"
++    app:cardCornerRadius="12dp">
+ 
+-    <ImageView
+-        android:id="@+id/eventImage"
+-        android:layout_width="56dp"
+-        android:layout_height="56dp"
+-        android:layout_marginEnd="12dp"
+-        android:contentDescription="@string/app_name"
+-        android:src="@drawable/ic_launcher_foreground" />
++    <androidx.constraintlayout.widget.ConstraintLayout
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:padding="8dp">
++
++        <!-- Event Image -->
++        <ImageView
++            android:id="@+id/eventImage"
++            android:layout_width="80dp"
++            android:layout_height="80dp"
++            android:scaleType="centerCrop"
++            android:contentDescription="Event Image"
++            app:layout_constraintStart_toStartOf="parent"
++            app:layout_constraintTop_toTopOf="parent"
++            app:layout_constraintBottom_toBottomOf="parent" />
+ 
+-    <LinearLayout
+-        android:layout_width="0dp"
+-        android:layout_height="wrap_content"
+-        android:layout_weight="1"
+-        android:orientation="vertical">
+-
++        <!-- Title -->
+         <TextView
+             android:id="@+id/eventTitle"
+-            android:layout_width="match_parent"
++            android:layout_width="0dp"
+             android:layout_height="wrap_content"
+             android:text="Event Title"
+             android:textStyle="bold"
+-            android:textSize="16sp" />
++            android:textSize="16sp"
++            android:maxLines="2"
++            android:ellipsize="end"
++            app:layout_constraintStart_toEndOf="@id/eventImage"
++            app:layout_constraintTop_toTopOf="@id/eventImage"
++            app:layout_constraintEnd_toEndOf="parent"
++            android:layout_marginStart="8dp"/>
+ 
++        <!-- Date & Time -->
+         <TextView
+             android:id="@+id/eventDateTime"
+-            android:layout_width="match_parent"
++            android:layout_width="0dp"
++            android:layout_height="wrap_content"
++            android:text="Jul 20, 2025 - 7:00 PM"
++            android:textSize="14sp"
++            app:layout_constraintStart_toStartOf="@id/eventTitle"
++            app:layout_constraintTop_toBottomOf="@id/eventTitle"
++            app:layout_constraintEnd_toEndOf="parent"/>
++
++        <!-- Participants/Spots -->
++        <TextView
++            android:id="@+id/eventSpots"
++            android:layout_width="0dp"
+             android:layout_height="wrap_content"
+-            android:text="Jan 01, 1:00 PM"
+-            android:alpha="0.85" />
++            android:text="20 spots available"
++            android:textSize="13sp"
++            android:textColor="#333333"
++            app:layout_constraintStart_toStartOf="@id/eventTitle"
++            app:layout_constraintTop_toBottomOf="@id/eventDateTime"
++            app:layout_constraintEnd_toEndOf="parent"/>
+ 
++        <!-- Distance -->
+         <TextView
+             android:id="@+id/eventLocation"
+-            android:layout_width="match_parent"
++            android:layout_width="0dp"
+             android:layout_height="wrap_content"
+-            android:text="Location"
+-            android:alpha="0.85" />
+-    </LinearLayout>
++            android:text="Place"
++            android:textSize="13sp"
++            android:textColor="#666666"
++            app:layout_constraintStart_toStartOf="@id/eventTitle"
++            app:layout_constraintTop_toBottomOf="@id/eventSpots"
++            app:layout_constraintEnd_toEndOf="parent"
++            app:layout_constraintBottom_toBottomOf="@id/eventImage"
++            android:layout_marginBottom="4dp"/>
+ 
+-</LinearLayout>
++    </androidx.constraintlayout.widget.ConstraintLayout>
++
++</androidx.cardview.widget.CardView>
