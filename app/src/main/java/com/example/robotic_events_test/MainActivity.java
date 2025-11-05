@@ -1,10 +1,12 @@
 package com.example.robotic_events_test;
 
-import android.content.Intent;
 import android.os.Bundle;
 
-import androidx.annotation.Nullable;
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -12,67 +14,52 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
-    private RecyclerView recyclerView;
-    private EventRecyclerViewAdapter adapter;
-    private final ArrayList<Event> events = new ArrayList<>();
+    ArrayList<Event> events = new ArrayList<>();
 
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main); // must contain RecyclerView with id eventsRecycler
+        EdgeToEdge.enable(this);
+        setContentView(R.layout.activity_main);
 
-        recyclerView = findViewById(R.id.eventsRecycler);
+        RecyclerView recyclerView = findViewById(R.id.events_container);
+        EventRecyclerViewAdapter adapter = new EventRecyclerViewAdapter(this, events);
+        recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        seedFakeData(); // replace with your Firestore load
+        defaultEvents(); // call AFTER setting adapter
+        adapter.notifyDataSetChanged();
 
-        adapter = new EventRecyclerViewAdapter(
-                this,
-                events,
-                (event, position, itemView) -> {
-                    Intent i = new Intent(this, EventDetailActivity.class);
-                    // Pass basic fields so detail screen can render without fetching
-                    i.putExtra("id",          event.getId());
-                    i.putExtra("title",       event.getTitle());
-                    i.putExtra("description", event.getDescription());
-                    i.putExtra("dateTime",    event.getDateTime());
-                    i.putExtra("location",    event.getLocation());
-                    i.putExtra("category",    event.getCategory());
-                    i.putExtra("organizerId", event.getOrganizerId());
-                    i.putExtra("totalCapacity", event.getTotalCapacity());
-                    i.putExtra("status",      event.getStatus());
-                    i.putExtra("imageResId",  event.getImageResId());
-                    i.putExtra("price",       event.getPrice());
-                    startActivity(i);
-                }
-        );
-        recyclerView.setAdapter(adapter);
     }
 
-    private void seedFakeData() {
-        long now = System.currentTimeMillis();
-        events.clear();
 
-        Event e1 = new Event("1", "Robotics Meetup", now + 3600_000L,
-                "CAB 3-10", R.drawable.ic_launcher_foreground, 50, 0.0);
-        e1.setDescription("Weekly robotics club meetup.");
-        e1.setCategory("Meetup");
-        e1.setOrganizerId("orgA");
+    private void defaultEvents() {
 
-        Event e2 = new Event("2", "Hardware Night", now + 7200_000L,
-                "ETLC E1-001", R.drawable.ic_launcher_foreground, 40, 5.0);
-        e2.setDescription("Soldering, sensors, PCB basics.");
-        e2.setCategory("Workshop");
-        e2.setOrganizerId("orgB");
+        events.add(new Event("1", "Kids Swimming Lessons",
+                1732150800000L,
+                "Westside Community Pool",
+                R.drawable.swimming, 20, 0.0));
 
-        Event e3 = new Event("3", "Competition Prep", now + 10800_000L,
-                "CSC 2-29", R.drawable.ic_launcher_foreground, 30, 0.0);
-        e3.setDescription("Strategy & practice for upcoming comp.");
-        e3.setCategory("Practice");
-        e3.setOrganizerId("orgC");
+        events.add(new Event("2", "Community Cooking Workshop",
+                1732237200000L,
+                "Downtown Community Kitchen",
+                R.drawable.cooking, 12, 10.0));
 
-        events.add(e1);
-        events.add(e2);
-        events.add(e3);
+        events.add(new Event("3", "Yoga in the Park",
+                1732323600000L,
+                "Central Park Stage",
+                R.drawable.yoga, 30, 5.0));
+
+        events.add(new Event("4", "Retro Stock Car Racing",
+                1732410000000L,
+                "City Raceway",
+                R.drawable.race, 25, 15.0));
+
+        events.add(new Event("5", "Recreational Soccer League",
+                1732496400000L,
+                "Maplewood Sports Field",
+                R.drawable.soccer, 22, 0.0));
+
     }
+
 }

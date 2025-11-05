@@ -1,6 +1,7 @@
 package com.example.robotic_events_test;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,57 +16,60 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
-public class EventRecyclerViewAdapter
-        extends RecyclerView.Adapter<EventRecyclerViewAdapter.ViewHolder> {
+public class EventRecyclerViewAdapter extends RecyclerView.Adapter<EventRecyclerViewAdapter.ViewHolder> {
 
-    public interface OnEventClickListener {
-        void onEventClick(Event event, int position, View itemView);
-    }
+    private Context context;
+    private ArrayList<Event> events;
 
-    private final Context context;
-    private final ArrayList<Event> events;
-    private final OnEventClickListener onClick;
-    private final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, h:mm a", Locale.getDefault());
-
-    public EventRecyclerViewAdapter(Context context,
-                                    ArrayList<Event> events,
-                                    OnEventClickListener onClick) {
+    public EventRecyclerViewAdapter(Context context, ArrayList<Event> events) {
         this.context = context;
         this.events = events;
-        this.onClick = onClick;
     }
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(context).inflate(R.layout.events_row, parent, false);
+        View view = LayoutInflater.from(context)
+                .inflate(R.layout.events_row, parent, false); // your card layout XML
         return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        Event e = events.get(position);
+        Event event = events.get(position);
 
-        holder.eventTitle.setText(nullToEmpty(e.getTitle()));
-        holder.eventLocation.setText(nullToEmpty(e.getLocation()));
+        holder.eventTitle.setText(event.getTitle());
+        holder.eventLocation.setText(event.getLocation());
 
-        String when = e.getDateTime() > 0
-                ? sdf.format(new Date(e.getDateTime()))
-                : "";
-        holder.eventDateTime.setText(when);
+        // Convert timestamp to readable date later — placeholder for now:
+        holder.eventDateTime.setText(formatDateTime(event.getDateTime()));
 
-        if (e.getImageResId() != 0) {
-            holder.eventImage.setImageResource(e.getImageResId());
-        } else {
-            holder.eventImage.setImageResource(android.R.color.transparent);
-        }
+
+        holder.eventImage.setImageResource(event.getImageResId());
 
         holder.itemView.setOnClickListener(v -> {
-            int pos = holder.getAdapterPosition();   // works on all RecyclerView versions
-            if (pos != RecyclerView.NO_POSITION && onClick != null) {
-                onClick.onEventClick(events.get(pos), pos, v);
-            }
+            int currentPosition = holder.getAdapterPosition();
+            if (currentPosition == RecyclerView.NO_POSITION) return;
+
+            Event clickedEvent = events.get(currentPosition);
+            Intent intent = new Intent(v.getContext(), EventDetailActivity.class);
+
+            intent.putExtra("id", clickedEvent.getId());
+            intent.putExtra("title", clickedEvent.getTitle());
+            intent.putExtra("description", clickedEvent.getDescription());
+            intent.putExtra("dateTime", clickedEvent.getDateTime());
+            intent.putExtra("location", clickedEvent.getLocation());
+            intent.putExtra("category", clickedEvent.getCategory());
+            intent.putExtra("organizerId", clickedEvent.getOrganizerId());
+            intent.putExtra("totalCapacity", clickedEvent.getTotalCapacity());
+            intent.putExtra("status", clickedEvent.getStatus());
+            intent.putExtra("imageResId", clickedEvent.getImageResId());
+            intent.putExtra("price", clickedEvent.getPrice());
+
+            v.getContext().startActivity(intent);
         });
+
+
     }
 
     @Override
@@ -73,20 +77,27 @@ public class EventRecyclerViewAdapter
         return events.size();
     }
 
-    private String nullToEmpty(String s) {
-        return s == null ? "" : s;
+    private String formatDateTime(long timestamp) {
+        Date date = new Date(timestamp);
+        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, h:mm a", Locale.getDefault());
+        return sdf.format(date);
     }
 
+
     public static class ViewHolder extends RecyclerView.ViewHolder {
+
         ImageView eventImage;
-        TextView eventTitle, eventDateTime, eventLocation;
+        TextView eventTitle;
+        TextView eventDateTime;
+        TextView eventLocation;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            eventImage    = itemView.findViewById(R.id.eventImage);
-            eventTitle    = itemView.findViewById(R.id.eventTitle);
+
+            eventImage = itemView.findViewById(R.id.eventImage);
+            eventTitle = itemView.findViewById(R.id.eventTitle);
             eventDateTime = itemView.findViewById(R.id.eventDateTime);
-            eventLocation = itemView.findViewById(R.id.eventLocation);
+            eventLocation = itemView.findViewById(R.id.eventLocation); // using distance TextView for now
         }
     }
 }

@@ -25,7 +25,7 @@ public class EventDetailActivity extends AppCompatActivity {
         TextView when     = findViewById(R.id.detailWhen);
         TextView where    = findViewById(R.id.detailWhere);
         TextView price    = findViewById(R.id.detailPrice);
-        TextView status   = findViewById(R.id.detailStatus);
+//        TextView status   = findViewById(R.id.detailStatus);
         TextView category = findViewById(R.id.detailCategory);
         TextView org      = findViewById(R.id.detailOrganizer);
         TextView cap      = findViewById(R.id.detailCapacity);
@@ -48,7 +48,7 @@ public class EventDetailActivity extends AppCompatActivity {
         when.setText(dateTime > 0 ? sdf.format(new Date(dateTime)) : "");
         where.setText(loc);
         price.setText(pr > 0 ? String.format(Locale.getDefault(), "$%.2f", pr) : "Free");
-        status.setText(st);
+//        status.setText(st);
         category.setText(cat);
         org.setText(organizerId);
         cap.setText(String.valueOf(totalCapacity));

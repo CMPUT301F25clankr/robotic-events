@@ -76,7 +76,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- ✅ Role Selection -->
+
     <RadioGroup
         android:id="@+id/roleGroup"
         android:layout_width="wrap_content"

@@ -49,7 +49,7 @@
         android:paddingHorizontal="12dp"
         android:background="@android:color/white">
 
-        <!-- My Events (big button) -->
+
         <Button
             android:id="@+id/my_events_button"
             android:layout_width="0dp"
@@ -65,7 +65,7 @@
             app:layout_constraintEnd_toStartOf="@id/qr_button"
             app:layout_constraintHorizontal_bias="0"/>
 
-        <!-- QR Code Button -->
+
         <ImageButton
             android:id="@+id/qr_button"
             android:layout_width="48dp"
@@ -80,7 +80,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:tint="@android:color/white" />
 
-        <!-- Filter Button aligned right -->
+
         <ImageButton
             android:id="@+id/filter_button"
             android:layout_width="48dp"
