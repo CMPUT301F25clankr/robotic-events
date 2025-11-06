@@ -29,9 +29,7 @@ public class MainActivity extends AppCompatActivity {
 
         defaultEvents(); // call AFTER setting adapter
         adapter.notifyDataSetChanged();
-
     }
-
 
     private void defaultEvents() {
 
