@@ -1,8 +1,10 @@
 package com.example.robotic_events_test;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.View;
 import android.view.ViewGroup;
 import android.util.Log;
 import android.widget.Button;
@@ -13,6 +15,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -26,8 +29,10 @@ import android.graphics.Color;
 import android.widget.Toast;
 
 public class EventDetailActivity extends AppCompatActivity {
-
     private final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, h:mm a", Locale.getDefault());
+    private FloatingActionButton fabEditEvent;
+
+    private String organizerId;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -39,6 +44,7 @@ public class EventDetailActivity extends AppCompatActivity {
         TextView when     = findViewById(R.id.detailWhen);
         TextView where    = findViewById(R.id.detailWhere);
         TextView price    = findViewById(R.id.detailPrice);
+
 //        TextView status   = findViewById(R.id.detailStatus);
         TextView category = findViewById(R.id.detailCategory);
         TextView org      = findViewById(R.id.detailOrganizer);
@@ -52,11 +58,19 @@ public class EventDetailActivity extends AppCompatActivity {
         long dateTime      = getIntent().getLongExtra("dateTime", 0L);
         String loc         = safe(getIntent().getStringExtra("location"));
         String cat         = safe(getIntent().getStringExtra("category"));
-        String organizerId = safe(getIntent().getStringExtra("organizerId"));
+        organizerId        = safe(getIntent().getStringExtra("organizerId"));
         int totalCapacity  = getIntent().getIntExtra("totalCapacity", 0);
         String st          = safe(getIntent().getStringExtra("status"));
         int imgResId       = getIntent().getIntExtra("imageResId", 0);
         double pr          = getIntent().getDoubleExtra("price", 0.0);
+
+        fabEditEvent = findViewById(R.id.fab_edit_event);
+        setupFabForOrganizer();
+        fabEditEvent.setOnClickListener(view -> {
+            Intent intent = new Intent(EventDetailActivity.this, EventEditActivity.class);
+            intent.putExtra("id", id);
+            startActivity(intent);
+        });
 
         // LOCAL (user) waitlistCount - queried once, only modified for local user
         AtomicInteger waitlistCount = new AtomicInteger();
@@ -66,11 +80,13 @@ public class EventDetailActivity extends AppCompatActivity {
         when.setText(dateTime > 0 ? sdf.format(new Date(dateTime)) : "");
         where.setText(loc);
         price.setText(pr > 0 ? String.format(Locale.getDefault(), "$%.2f", pr) : "Free");
+
 //        status.setText(st);
         cap.setText(totalCapacity > 0 ? String.format(Locale.getDefault(),
                 "Capacity\n%d", totalCapacity) : "Unlimited");
 
-        // Get parent
+
+// Get parent
         ViewGroup parent = (ViewGroup) desc.getParent();
 
         // Delete empty views
@@ -167,6 +183,24 @@ public class EventDetailActivity extends AppCompatActivity {
         });
     }
 
+    private void setupFabForOrganizer() {
+        String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        FirebaseFirestore.getInstance().collection("users").document(uid).get().addOnSuccessListener(documentSnapshot -> {
+            User user = documentSnapshot.toObject(User.class);
+            if (user != null && user.isOrganizer()) {
+                fabEditEvent.setVisibility(View.VISIBLE);
+            } else {
+                fabEditEvent.setVisibility(View.GONE);
+            }
+        });/*
+        if (organizerId.equals(uid)) {
+            fabEditEvent.setVisibility(View.VISIBLE);
+        } else {
+            fabEditEvent.setVisibility(View.GONE);
+        }*/
+    }
+
     private String safe(String s) { return s == null ? "" : s; }
     private boolean waitlistDebounce = false;
+
 }
