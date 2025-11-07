@@ -169,7 +169,7 @@
             android:text="Join Waitlist"
             android:textSize="18sp"
             android:layout_marginTop="22dp"
-            android:backgroundTint="?attr/colorPrimary"
+            android:backgroundTint="#008000"
             android:textColor="@android:color/white" />
     </LinearLayout>
 

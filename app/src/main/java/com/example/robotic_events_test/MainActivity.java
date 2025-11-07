@@ -1,7 +1,10 @@
 package com.example.robotic_events_test;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Button;
+import android.widget.ImageButton;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -17,6 +20,7 @@ import java.util.ArrayList;
 public class MainActivity extends AppCompatActivity {
 
     ArrayList<Event> events = new ArrayList<>();
+    private ImageButton profileButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,6 +32,8 @@ public class MainActivity extends AppCompatActivity {
         EventRecyclerViewAdapter adapter = new EventRecyclerViewAdapter(this, events);
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        profileButton = findViewById(R.id.profileButton);
 
         defaultEvents(); // call AFTER setting adapter
         adapter.notifyDataSetChanged();
@@ -74,7 +80,13 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
         });
+        profileButton.setOnClickListener(v -> {
+            startActivity(new Intent(this, ProfileActivity.class));
+        });
+
     }
+
+
 
 
     private void defaultEvents() {

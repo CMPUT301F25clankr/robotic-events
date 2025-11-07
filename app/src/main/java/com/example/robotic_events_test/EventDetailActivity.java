@@ -4,6 +4,8 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.util.Log;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -11,11 +13,19 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import com.google.android.material.appbar.MaterialToolbar;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
+
+import android.graphics.Color;
+import android.widget.Toast;
 
 public class EventDetailActivity extends AppCompatActivity {
 
@@ -80,7 +90,86 @@ public class EventDetailActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayShowHomeEnabled(true);
 
         toolbar.setNavigationOnClickListener(v -> { getOnBackPressedDispatcher().onBackPressed(); });
+
+        MaterialToolbar toolbar = findViewById(R.id.eventDetailToolbar);
+        setSupportActionBar(toolbar);
+        toolbar.setNavigationOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
+
+
+        Button joinButton = findViewById(R.id.joinLeaveWaitlistButton);
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+
+        if (currentUser != null) {
+            String userId = currentUser.getUid();
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+            String docId = id + "_" + userId;
+
+            db.collection("waitlists").document(docId).get()
+                    .addOnSuccessListener(document -> {
+                        if (document.exists()) {
+                            joinButton.setText("Leave Waitlist");
+                            joinButton.setBackgroundColor(Color.parseColor("#ff0f0f"));
+                        } else {
+                            joinButton.setText("Join Waitlist");
+                            joinButton.setBackgroundColor(Color.parseColor("#008000"));
+                        }
+                    });
+
+            //COUNT STORES WAITLIST COUNT
+            db.collection("waitlists")
+                    .whereEqualTo("eventId", id)
+                    .get()
+                    .addOnSuccessListener(snapshot -> {
+                        int count = snapshot.size();
+                        Toast.makeText(this, "Total waitlisted: " + count, Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e ->
+                            Log.e("Waitlist", "Error fetching waitlist count", e)
+                    );
+
+        }
+
+        joinButton.setOnClickListener(v -> {
+            if (currentUser == null) return;
+
+            String userId = currentUser.getUid();
+            String docId = id + "_" + userId;
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+            db.collection("waitlists").document(docId).get()
+                    .addOnSuccessListener(document -> {
+                        if (document.exists()) {
+                            //remove from wait list
+                            db.collection("waitlists").document(docId).delete()
+                                    .addOnSuccessListener(aVoid -> {
+                                        joinButton.setText("Join Waitlist");
+                                        joinButton.setBackgroundColor(Color.parseColor("#008000"));
+                                        Toast.makeText(this, "Removed from waitlist", Toast.LENGTH_SHORT).show();
+                                    });
+                        } else {
+                            // add to waitlist
+                            Waitlist entry = new Waitlist(id, userId, System.currentTimeMillis());
+                            db.collection("waitlists").document(docId).set(entry)
+                                    .addOnSuccessListener(aVoid -> {
+                                        joinButton.setText("Leave Waitlist");
+                                        joinButton.setBackgroundColor(Color.parseColor("#ff0f0f"));
+                                        Toast.makeText(this, "Added to waitlist", Toast.LENGTH_SHORT).show();
+                                    });
+                        }
+                    });
+        });
+
+
+
+
+
+
+
     }
+
+
+
+
 
     private String safe(String s) { return s == null ? "" : s; }
 }
