@@ -1,51 +1,50 @@
 package com.example.robotic_events_test;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.view.ViewGroup;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import android.graphics.Color;
+import android.widget.Toast;
 
 public class EventDetailActivity extends AppCompatActivity {
 
     private final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, h:mm a", Locale.getDefault());
-
-    private Button joinLeaveWaitlistButton;
-    private FirebaseAuth auth;
-    private FirebaseFirestore db;
-
-    private String eventId;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_event_detail);
 
-        auth = FirebaseAuth.getInstance();
-        db = FirebaseFirestore.getInstance();
-
         ImageView image   = findViewById(R.id.detailImage);
         TextView title    = findViewById(R.id.detailTitle);
         TextView when     = findViewById(R.id.detailWhen);
         TextView where    = findViewById(R.id.detailWhere);
         TextView price    = findViewById(R.id.detailPrice);
-//      TextView status   = findViewById(R.id.detailStatus);
+//        TextView status   = findViewById(R.id.detailStatus);
         TextView category = findViewById(R.id.detailCategory);
         TextView org      = findViewById(R.id.detailOrganizer);
         TextView cap      = findViewById(R.id.detailCapacity);
         TextView desc     = findViewById(R.id.detailDescription);
+        TextView waitlist = findViewById(R.id.detailWaitlist);
 
         String id          = getIntent().getStringExtra("id");
         String t           = safe(getIntent().getStringExtra("title"));
@@ -59,83 +58,115 @@ public class EventDetailActivity extends AppCompatActivity {
         int imgResId       = getIntent().getIntExtra("imageResId", 0);
         double pr          = getIntent().getDoubleExtra("price", 0.0);
 
+        // LOCAL (user) waitlistCount - queried once, only modified for local user
+        AtomicInteger waitlistCount = new AtomicInteger();
+
         if (imgResId != 0) image.setImageResource(imgResId);
-        title.setText(t.isEmpty() ? "(Untitled)" : t);
+        title.setText(t.isEmpty() ? "(Untitled Event)" : t);
         when.setText(dateTime > 0 ? sdf.format(new Date(dateTime)) : "");
         where.setText(loc);
         price.setText(pr > 0 ? String.format(Locale.getDefault(), "$%.2f", pr) : "Free");
 //        status.setText(st);
-        category.setText(cat);
+        cap.setText(totalCapacity > 0 ? String.format(Locale.getDefault(),
+                "Capacity\n%d", totalCapacity) : "Unlimited");
+
+        // Get parent
+        ViewGroup parent = (ViewGroup) desc.getParent();
+
+        // Delete empty views
+        if (organizerId.isEmpty()) { parent.removeView(org); }
+
+        if (d.isEmpty()) { parent.removeView(desc); }
+
+        if (cat.isEmpty()) { parent.removeView(category); }
+
         org.setText(organizerId);
-        cap.setText(String.valueOf(totalCapacity));
         desc.setText(d);
+        category.setText(cat);
 
-        this.eventId = id;
+        // Get toolbar; allow navigation back to home page
+        MaterialToolbar toolbar = findViewById(R.id.eventDetailToolbar);
+        setSupportActionBar(toolbar);
+        toolbar.setNavigationOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
 
-        joinLeaveWaitlistButton = findViewById(R.id.joinLeaveWaitlistButton);
-        joinLeaveWaitlistButton.setOnClickListener(v -> joinLeaveWaitlist());
-    }
 
-    private void joinLeaveWaitlist() {
-        String uid = auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : null;
-        if (uid == null) {
-            Toast.makeText(this, "You must be logged in to join the waitlist.", Toast.LENGTH_SHORT).show();
-            return;
+        Button joinButton = findViewById(R.id.joinLeaveWaitlistButton);
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+
+        if (currentUser != null) {
+            String userId = currentUser.getUid();
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+            String docId = id + "_" + userId;
+
+            db.collection("waitlists").document(docId).get()
+                    .addOnSuccessListener(document -> {
+                        if (document.exists()) {
+                            joinButton.setText("Leave Waitlist");
+                            joinButton.setBackgroundColor(Color.parseColor("#ff0f0f"));
+                        } else {
+                            joinButton.setText("Join Waitlist");
+                            joinButton.setBackgroundColor(Color.parseColor("#008000"));
+                        }
+                    });
+
+            //COUNT STORES WAITLIST COUNT
+            db.collection("waitlists")
+                    .whereEqualTo("eventId", id)
+                    .get()
+                    .addOnSuccessListener(snapshot -> {
+                        waitlistCount.set(snapshot.size());
+                        waitlist.setText(String.format(Locale.getDefault(), "Waitlisted\n%d", waitlistCount.get()));
+                        //Toast.makeText(this, "Total waitlisted: " + waitlistCount, Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e ->
+                            Log.e("Waitlist", "Error fetching waitlist count", e)
+                    );
+
         }
 
-        DocumentReference eventRef = db.collection("events").document(eventId);
-        eventRef.get().addOnSuccessListener(snapshot -> {
-            if (!snapshot.exists()) {
-                Toast.makeText(this, "Event not found.", Toast.LENGTH_SHORT).show();
-                return;
-            }
+        joinButton.setOnClickListener(v -> {
+            if (currentUser == null) return;
+            if (waitlistDebounce) return; // ignore rapid clicks
+            waitlistDebounce = true;
 
-            boolean isOnWaitlist = snapshot.contains("waitlist") &&
-                    snapshot.get("waitlist") instanceof java.util.List &&
-                    ((java.util.List<?>) snapshot.get("waitlist")).contains(uid);
+            String userId = currentUser.getUid();
+            String docId = id + "_" + userId;
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-            // remove from waitlist
-            if (isOnWaitlist) {
-                eventRef.update("waitlist", FieldValue.arrayRemove(uid))
-                        .addOnSuccessListener(aVoid -> {
-                            Toast.makeText(this, "You left the waitlist.", Toast.LENGTH_SHORT).show();
-                            joinLeaveWaitlistButton.setText("Join Waitlist");
-                        })
-                        .addOnFailureListener(e ->
-                                Toast.makeText(this, "Error leaving waitlist: " + e.getMessage(), Toast.LENGTH_LONG).show());
-            } else { //add to waitlist
-                eventRef.update("waitlist", FieldValue.arrayUnion(uid))
-                        .addOnSuccessListener(aVoid -> {
-                            Toast.makeText(this, "You joined the waitlist!", Toast.LENGTH_SHORT).show();
-                            joinLeaveWaitlistButton.setText("Leave Waitlist");
-                        })
-                        .addOnFailureListener(e ->
-                                Toast.makeText(this, "Error joining waitlist: " + e.getMessage(), Toast.LENGTH_LONG).show());
-            }
+            db.collection("waitlists").document(docId).get()
+                    .addOnSuccessListener(document -> {
+                        if (document.exists()) {
+                            //remove from wait list
+                            db.collection("waitlists").document(docId).delete()
+                                    .addOnSuccessListener(aVoid -> {
+                                        joinButton.setText("Join Waitlist");
+                                        joinButton.setBackgroundColor(Color.parseColor("#008000"));
+                                        waitlistCount.set(waitlistCount.get() - 1);
+                                        waitlist.setText(String.format(Locale.getDefault(), "Waitlisted\n%d", waitlistCount.get()));
+                                        //Toast.makeText(this, "Removed from waitlist", Toast.LENGTH_SHORT).show();
+
+                                        // Debounce
+                                        new Handler(Looper.getMainLooper()).postDelayed(() -> waitlistDebounce = false, 500);
+                                    });
+                        } else {
+                            // add to waitlist
+                            Waitlist entry = new Waitlist(id, userId, System.currentTimeMillis());
+                            db.collection("waitlists").document(docId).set(entry)
+                                    .addOnSuccessListener(aVoid -> {
+                                        joinButton.setText("Leave Waitlist");
+                                        joinButton.setBackgroundColor(Color.parseColor("#ff0f0f"));
+                                        waitlistCount.set(waitlistCount.get() + 1);
+                                        waitlist.setText(String.format(Locale.getDefault(), "Waitlisted\n%d", waitlistCount.get()));
+                                        //Toast.makeText(this, "Added to waitlist", Toast.LENGTH_SHORT).show();
+
+                                        // Debounce
+                                        new Handler(Looper.getMainLooper()).postDelayed(() -> waitlistDebounce = false, 500);
+                                    });
+                        }
+                    });
         });
     }
 
-    private void updateButtonText() {
-        String uid = auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : null;
-        if (uid == null) {
-            joinLeaveWaitlistButton.setText("Join Waitlist");
-            return;
-        }
-
-        db.collection("events").document(this.eventId).get()
-                .addOnSuccessListener(snapshot -> {
-                    boolean isOnWaitlist = snapshot.contains("waitlist") &&
-                            snapshot.get("waitlist") instanceof java.util.List &&
-                            ((java.util.List<?>) snapshot.get("waitlist")).contains(uid);
-
-                    if(isOnWaitlist){
-                        joinLeaveWaitlistButton.setText("Leave Waitlist");
-                    } else {
-                        joinLeaveWaitlistButton.setText("Join Waitlist");
-                    }
-
-                });
-    }
-
     private String safe(String s) { return s == null ? "" : s; }
+    private boolean waitlistDebounce = false;
 }

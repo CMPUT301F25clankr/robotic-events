@@ -33,9 +33,9 @@ public class LoginActivity extends AppCompatActivity {
         adminButton = findViewById(R.id.adminButton);
 
         // Already logged in? Skip login
-//        if (auth.getCurrentUser() != null) {
-//            goToMain();
-//        }
+        if (auth.getCurrentUser() != null) {
+            goToMain();
+        }
 
         loginButton.setOnClickListener(v -> loginUser());
         signupButton.setOnClickListener(v -> {
