@@ -30,6 +30,7 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:contentDescription="Add Event"
+        android:backgroundTint="#6750A4"
         android:src="@android:drawable/ic_input_add"
         app:tint="@android:color/white"
         android:visibility="gone"
