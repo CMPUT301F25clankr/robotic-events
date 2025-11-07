@@ -2,10 +2,8 @@ package com.example.robotic_events_test;
 
 /**
  * Represents a user in the Robotic Events application.
- * <p>
  * This class contains information about a user, including their name, email, contact details, and roles (such as whether they are an organizer).
  * It is used for user authentication, profile management, and Firebase data storage/retrieval.
- * </p>
  */
 public class User {
 

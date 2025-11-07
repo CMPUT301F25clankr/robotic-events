@@ -1,11 +1,9 @@
 package com.example.robotic_events_test;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import java.util.ArrayList;
-import java.util.List;
-
+/**
+ * Represents an event in the Robotic Events application.
+ * This class contains all details about an event such as its title, description, date/time, location, organizer, capacity, price, and image resource.
+ */
 public class Event {
 
     private String id;
