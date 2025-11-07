@@ -2,9 +2,7 @@ package com.example.robotic_events_test;
 
 /**
  * Represents an event in the Robotic Events application.
- * <p>
  * This class contains all details about an event such as its title, description, date/time, location, organizer, capacity, price, and image resource.
- * </p>
  */
 public class Event {
 
