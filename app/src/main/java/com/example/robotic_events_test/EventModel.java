@@ -1,7 +1,6 @@
 package com.example.robotic_events_test;
 
 import android.util.Log;
-
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -113,7 +112,7 @@ public class EventModel {
             // Store under a specific document ID (overwrites existing data)
             eventData.put("id", id);
             eventsCollection.document(id)
-                    .set(eventData)
+                    .set(event)
                     .addOnSuccessListener(aVoid ->
                             Log.d("EventModel", "Event saved with ID " + id))
                     .addOnFailureListener(e ->

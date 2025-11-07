@@ -85,18 +85,17 @@ public class EventCreationActivity extends AppCompatActivity {
         );
         long dateTime = calendar.getTimeInMillis();
 
-        eventModel.saveEvent(
-                null, // autogen id
+        eventModel.saveEvent(new Event(
                 eventTitle,
-                "Default Description",
-                dateTime,
                 "Default Location",
+                dateTime,
                 eventCapacity,
                 0.0,
-                organizerId,
+                "Default Description",
                 "General",
+                organizerId,
                 null
-        );
+        ));
 
         Toast.makeText(this, "Event created successfully!", Toast.LENGTH_SHORT).show();
         Log.d("EventCreationActivity", "Event creation data sent to model.");

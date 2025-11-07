@@ -16,11 +16,13 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -44,8 +46,13 @@ public class MainActivity extends AppCompatActivity {
 
         profileButton = findViewById(R.id.profileButton);
 
-        defaultEvents(); // call AFTER setting adapter
-        adapter.notifyDataSetChanged();
+        // grab events from model
+        EventModel eventModel = new EventModel();
+        Task<List<Event>> allEvents = eventModel.getAllEvents();
+        allEvents.addOnSuccessListener(eventList -> {
+            this.events.addAll(eventList);
+            adapter.notifyDataSetChanged();
+        });
 
         // FAB SETUP FOR ORGANIZER
         fabAddEvent = findViewById(R.id.fab_add_event);
@@ -126,34 +133,4 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-
-    private void defaultEvents() {
-
-        events.add(new Event("1", "Kids Swimming Lessons",
-                1732150800000L,
-                "Westside Community Pool",
-                R.drawable.swimming, 20, 0.0));
-
-        events.add(new Event("2", "Community Cooking Workshop",
-                1732237200000L,
-                "Downtown Community Kitchen",
-                R.drawable.cooking, 12, 10.0));
-
-        events.add(new Event("3", "Yoga in the Park",
-                1732323600000L,
-                "Central Park Stage",
-                R.drawable.yoga, 30, 5.0));
-
-        events.add(new Event("4", "Retro Stock Car Racing",
-                1732410000000L,
-                "City Raceway",
-                R.drawable.race, 25, 15.0));
-
-        events.add(new Event("5", "Recreational Soccer League",
-                1732496400000L,
-                "Maplewood Sports Field",
-                R.drawable.soccer, 22, 0.0));
-
-    }
-
 }
