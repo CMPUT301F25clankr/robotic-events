@@ -45,7 +45,7 @@ public class EventRecyclerViewAdapter extends RecyclerView.Adapter<EventRecycler
         holder.eventDateTime.setText(formatDateTime(event.getDateTime()));
 
 
-        holder.eventImage.setImageResource(event.getImageResId());
+        // holder.eventImage.setImageResource(event.getImageResId());
 
         holder.itemView.setOnClickListener(v -> {
             int currentPosition = holder.getAdapterPosition();
@@ -63,7 +63,7 @@ public class EventRecyclerViewAdapter extends RecyclerView.Adapter<EventRecycler
             intent.putExtra("organizerId", clickedEvent.getOrganizerId());
             intent.putExtra("totalCapacity", clickedEvent.getTotalCapacity());
             intent.putExtra("status", clickedEvent.getStatus());
-            intent.putExtra("imageResId", clickedEvent.getImageResId());
+            intent.putExtra("imageUrl", clickedEvent.getImageUrl());
             intent.putExtra("price", clickedEvent.getPrice());
 
             v.getContext().startActivity(intent);
