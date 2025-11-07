@@ -15,11 +15,9 @@ import java.util.Map;
 
 public class EventModel {
     private final FirebaseFirestore db;
-    private final String collectionName;
     private final CollectionReference eventsCollection;
 
     EventModel(String collectionName) {
-        this.collectionName = collectionName;
         this.db = FirebaseFirestore.getInstance();
         this.eventsCollection = db.collection(collectionName);
 
@@ -57,7 +55,7 @@ public class EventModel {
 
         if (id != null && !id.isEmpty()) {
             eventData.put("id", id);
-            // .set() will overwrite the entire document.
+            // .set() will overwrite the entire document (if it exists)
             eventsCollection.document(id)
                     .set(eventData)
                     .addOnSuccessListener(aVoid ->
