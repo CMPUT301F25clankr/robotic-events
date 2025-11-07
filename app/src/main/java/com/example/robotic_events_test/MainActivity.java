@@ -1,9 +1,11 @@
 package com.example.robotic_events_test;
 
 import android.os.Bundle;
+import android.util.Log;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SearchView;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -30,6 +32,48 @@ public class MainActivity extends AppCompatActivity {
         defaultEvents(); // call AFTER setting adapter
         adapter.notifyDataSetChanged();
 
+        androidx.appcompat.widget.SearchView searchBar = findViewById(R.id.search_bar);
+        searchBar.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                ArrayList<Event> filteredEvents = new ArrayList<>();
+                EventRecyclerViewAdapter filteredAdapter = new EventRecyclerViewAdapter(MainActivity.this, filteredEvents);
+
+                if (query.isEmpty()) {
+                    recyclerView.setAdapter(adapter);
+                }
+
+                for (Event event : events) {
+                    String title = event.getTitle().toLowerCase();
+                    if (title.contains(query.toLowerCase())) {
+                        filteredEvents.add(event);
+                    }
+                }
+                filteredAdapter.notifyDataSetChanged();
+                recyclerView.setAdapter(filteredAdapter);
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                ArrayList<Event> filteredEvents = new ArrayList<>();
+                EventRecyclerViewAdapter filteredAdapter = new EventRecyclerViewAdapter(MainActivity.this, filteredEvents);
+
+                if (newText.isEmpty()) {
+                    recyclerView.setAdapter(adapter);
+                }
+
+                for (Event event : events) {
+                    String title = event.getTitle().toLowerCase();
+                    if (title.contains(newText.toLowerCase())) {
+                        filteredEvents.add(event);
+                    }
+                }
+                filteredAdapter.notifyDataSetChanged();
+                recyclerView.setAdapter(filteredAdapter);
+                return false;
+            }
+        });
     }
 
 

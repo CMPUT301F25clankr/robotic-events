@@ -1,15 +1,21 @@
 package com.example.robotic_events_test;
 
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.material.appbar.MaterialToolbar;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Objects;
 
 public class EventDetailActivity extends AppCompatActivity {
 
@@ -44,15 +50,36 @@ public class EventDetailActivity extends AppCompatActivity {
         double pr          = getIntent().getDoubleExtra("price", 0.0);
 
         if (imgResId != 0) image.setImageResource(imgResId);
-        title.setText(t.isEmpty() ? "(Untitled)" : t);
+        title.setText(t.isEmpty() ? "(Untitled Event)" : t);
         when.setText(dateTime > 0 ? sdf.format(new Date(dateTime)) : "");
         where.setText(loc);
         price.setText(pr > 0 ? String.format(Locale.getDefault(), "$%.2f", pr) : "Free");
 //        status.setText(st);
-        category.setText(cat);
+        cap.setText(totalCapacity > 0 ? String.format(Locale.getDefault(),
+                "Capacity\n%d", totalCapacity) : "Unlimited");
+
+        // Get parent
+        ViewGroup parent = (ViewGroup) desc.getParent();
+
+        // Delete empty views
+        if (organizerId.isEmpty()) { parent.removeView(org); }
+
+        if (d.isEmpty()) { parent.removeView(desc); }
+
+        if (cat.isEmpty()) { parent.removeView(category); }
+
         org.setText(organizerId);
-        cap.setText(String.valueOf(totalCapacity));
         desc.setText(d);
+        category.setText(cat);
+
+        // Get toolbar; allow navigation back to home page
+        MaterialToolbar toolbar = findViewById(R.id.eventDetailToolbar);
+        setSupportActionBar(toolbar);
+
+        Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+
+        toolbar.setNavigationOnClickListener(v -> { getOnBackPressedDispatcher().onBackPressed(); });
     }
 
     private String safe(String s) { return s == null ? "" : s; }

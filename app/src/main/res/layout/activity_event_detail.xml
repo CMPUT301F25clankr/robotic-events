@@ -39,48 +39,89 @@
             android:textStyle="bold"
             android:layout_marginTop="16dp" />
 
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:layout_marginTop="8dp">
 
-            <ImageView
-                android:src="@drawable/ic_calendar"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                app:tint="@color/black" />
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_calendar"
+                        app:tint="@color/black" />
+
+                    <TextView
+                        android:id="@+id/detailWhen"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="Date &amp; Time" />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="4dp">
+
+                    <ImageView
+                        android:src="@drawable/ic_location"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        app:tint="@color/black" />
+
+                    <TextView
+                        android:id="@+id/detailWhere"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="Location" />
+                </LinearLayout>
+
+            </LinearLayout>
 
             <TextView
-                android:id="@+id/detailWhen"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="Date &amp; Time" />
-        </LinearLayout>
-
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="4dp">
-
-            <ImageView
-                android:src="@drawable/ic_location"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                app:tint="@color/black" />
+                android:id="@+id/detailWaitlist"
+                android:background="@android:color/holo_orange_dark"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:gravity="center"
+                android:text="Waitlisted\n0"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:textSize="10sp"
+                android:layout_marginTop="8dp"
+                android:layout_marginLeft="8dp"/>
 
             <TextView
-                android:id="@+id/detailWhere"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="Location" />
-        </LinearLayout>
+                android:id="@+id/detailCapacity"
+                android:background="@android:color/holo_green_dark"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:gravity="center"
+                android:text="Capacity\n999"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:textSize="10sp"
+                android:layout_marginTop="8dp"
+                android:layout_marginLeft="8dp"/>
 
+
+        </LinearLayout>
 
         <TextView
             android:id="@+id/detailPrice"
@@ -110,14 +151,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Organizer"
-            android:layout_marginTop="4dp" />
-
-
-        <TextView
-            android:id="@+id/detailCapacity"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Capacity"
             android:layout_marginTop="4dp" />
 
 
