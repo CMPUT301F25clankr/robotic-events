@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Row with ripple + no focus stealing -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/eventRowRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="12dp"
+    android:foreground="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:descendantFocusability="blocksDescendants">
+
+    <ImageView
+        android:id="@+id/eventImage"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_marginEnd="12dp"
+        android:contentDescription="@string/app_name"
+        android:src="@drawable/ic_launcher_foreground" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/eventTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Event Title"
+            android:textStyle="bold"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/eventDateTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Jan 01, 1:00 PM"
+            android:alpha="0.85" />
+
+        <TextView
+            android:id="@+id/eventLocation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Location"
+            android:alpha="0.85" />
+    </LinearLayout>
+
+</LinearLayout>
