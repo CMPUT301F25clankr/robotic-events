@@ -3,6 +3,7 @@ package com.example.robotic_events_test;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 
@@ -15,12 +16,20 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
     ArrayList<Event> events = new ArrayList<>();
     private ImageButton profileButton;
+    // for organizers
+    private FloatingActionButton fabAddEvent;
+    private FirebaseAuth auth;
+    private FirebaseFirestore db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +46,25 @@ public class MainActivity extends AppCompatActivity {
 
         defaultEvents(); // call AFTER setting adapter
         adapter.notifyDataSetChanged();
+
+        // FAB SETUP FOR ORGANIZER
+        fabAddEvent = findViewById(R.id.fab_add_event);
+        db = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
+
+        setupFabForOrganizer(); // makes it visible if user is organizer
+
+        fabAddEvent.setOnClickListener(view -> {
+            Intent intent = new Intent(MainActivity.this, EventCreationActivity.class);
+            startActivity(intent);
+        });
+        // END FAB SETUP FOR OGANIZER
+
+        fabAddEvent.setOnClickListener(view -> {
+            // Start the EventCreationActivity
+            Intent intent = new Intent(MainActivity.this, EventCreationActivity.class);
+            startActivity(intent);
+        });
 
         androidx.appcompat.widget.SearchView searchBar = findViewById(R.id.search_bar);
         searchBar.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -86,8 +114,18 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private void setupFabForOrganizer() {
+        String uid = auth.getCurrentUser().getUid();
 
-
+        db.collection("users").document(uid).get().addOnSuccessListener(documentSnapshot -> {
+            User user = documentSnapshot.toObject(User.class);
+            if (user != null && user.isOrganizer()) {
+                fabAddEvent.setVisibility(View.VISIBLE);
+            } else {
+                fabAddEvent.setVisibility(View.GONE);
+            }
+        });
+    }
 
     private void defaultEvents() {
 
