@@ -1,9 +1,9 @@
 package com.example.robotic_events_test;
 
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.ViewGroup;
-import android.view.ViewParent;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -17,12 +17,10 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
-import com.google.android.material.appbar.MaterialToolbar;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
-import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import android.graphics.Color;
 import android.widget.Toast;
@@ -46,6 +44,7 @@ public class EventDetailActivity extends AppCompatActivity {
         TextView org      = findViewById(R.id.detailOrganizer);
         TextView cap      = findViewById(R.id.detailCapacity);
         TextView desc     = findViewById(R.id.detailDescription);
+        TextView waitlist = findViewById(R.id.detailWaitlist);
 
         String id          = getIntent().getStringExtra("id");
         String t           = safe(getIntent().getStringExtra("title"));
@@ -58,6 +57,9 @@ public class EventDetailActivity extends AppCompatActivity {
         String st          = safe(getIntent().getStringExtra("status"));
         int imgResId       = getIntent().getIntExtra("imageResId", 0);
         double pr          = getIntent().getDoubleExtra("price", 0.0);
+
+        // LOCAL (user) waitlistCount - queried once, only modified for local user
+        AtomicInteger waitlistCount = new AtomicInteger();
 
         if (imgResId != 0) image.setImageResource(imgResId);
         title.setText(t.isEmpty() ? "(Untitled Event)" : t);
@@ -83,14 +85,6 @@ public class EventDetailActivity extends AppCompatActivity {
         category.setText(cat);
 
         // Get toolbar; allow navigation back to home page
-        MaterialToolbar toolbar = findViewById(R.id.eventDetailToolbar);
-        setSupportActionBar(toolbar);
-
-        Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setDisplayShowHomeEnabled(true);
-
-        toolbar.setNavigationOnClickListener(v -> { getOnBackPressedDispatcher().onBackPressed(); });
-
         MaterialToolbar toolbar = findViewById(R.id.eventDetailToolbar);
         setSupportActionBar(toolbar);
         toolbar.setNavigationOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
@@ -120,8 +114,9 @@ public class EventDetailActivity extends AppCompatActivity {
                     .whereEqualTo("eventId", id)
                     .get()
                     .addOnSuccessListener(snapshot -> {
-                        int count = snapshot.size();
-                        Toast.makeText(this, "Total waitlisted: " + count, Toast.LENGTH_SHORT).show();
+                        waitlistCount.set(snapshot.size());
+                        waitlist.setText(String.format(Locale.getDefault(), "Waitlisted\n%d", waitlistCount.get()));
+                        //Toast.makeText(this, "Total waitlisted: " + waitlistCount, Toast.LENGTH_SHORT).show();
                     })
                     .addOnFailureListener(e ->
                             Log.e("Waitlist", "Error fetching waitlist count", e)
@@ -131,6 +126,8 @@ public class EventDetailActivity extends AppCompatActivity {
 
         joinButton.setOnClickListener(v -> {
             if (currentUser == null) return;
+            if (waitlistDebounce) return; // ignore rapid clicks
+            waitlistDebounce = true;
 
             String userId = currentUser.getUid();
             String docId = id + "_" + userId;
@@ -144,7 +141,12 @@ public class EventDetailActivity extends AppCompatActivity {
                                     .addOnSuccessListener(aVoid -> {
                                         joinButton.setText("Join Waitlist");
                                         joinButton.setBackgroundColor(Color.parseColor("#008000"));
-                                        Toast.makeText(this, "Removed from waitlist", Toast.LENGTH_SHORT).show();
+                                        waitlistCount.set(waitlistCount.get() - 1);
+                                        waitlist.setText(String.format(Locale.getDefault(), "Waitlisted\n%d", waitlistCount.get()));
+                                        //Toast.makeText(this, "Removed from waitlist", Toast.LENGTH_SHORT).show();
+
+                                        // Debounce
+                                        new Handler(Looper.getMainLooper()).postDelayed(() -> waitlistDebounce = false, 500);
                                     });
                         } else {
                             // add to waitlist
@@ -153,23 +155,18 @@ public class EventDetailActivity extends AppCompatActivity {
                                     .addOnSuccessListener(aVoid -> {
                                         joinButton.setText("Leave Waitlist");
                                         joinButton.setBackgroundColor(Color.parseColor("#ff0f0f"));
-                                        Toast.makeText(this, "Added to waitlist", Toast.LENGTH_SHORT).show();
+                                        waitlistCount.set(waitlistCount.get() + 1);
+                                        waitlist.setText(String.format(Locale.getDefault(), "Waitlisted\n%d", waitlistCount.get()));
+                                        //Toast.makeText(this, "Added to waitlist", Toast.LENGTH_SHORT).show();
+
+                                        // Debounce
+                                        new Handler(Looper.getMainLooper()).postDelayed(() -> waitlistDebounce = false, 500);
                                     });
                         }
                     });
         });
-
-
-
-
-
-
-
     }
 
-
-
-
-
     private String safe(String s) { return s == null ? "" : s; }
+    private boolean waitlistDebounce = false;
 }
