@@ -11,20 +11,20 @@ public class Event {
     private String organizerId;
     private int totalCapacity;
     private String status;
-    private int imageResId;
+    private String imageUrl;
     private double price;
 
     public Event() {}
 
     public Event(String id, String title, long dateTime,
-                 String location, int imageResId,
+                 String location, String imageUrl,
                  int totalCapacity, double price) {
 
         this.id = id;
         this.title = title;
         this.dateTime = dateTime;
         this.location = location;
-        this.imageResId = imageResId;
+        this.imageUrl = imageUrl;
         this.totalCapacity = totalCapacity;
         this.price = price;
         this.status = "open";
@@ -57,8 +57,8 @@ public class Event {
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
-    public int getImageResId() { return imageResId; }
-    public void setImageResId(int imageResId) { this.imageResId = imageResId; }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
     public double getPrice() { return price; }
     public void setPrice(double price) { this.price = price; }

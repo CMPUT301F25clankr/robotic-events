@@ -44,7 +44,9 @@ public class MainActivity extends AppCompatActivity {
 
         profileButton = findViewById(R.id.profileButton);
 
-        defaultEvents(); // call AFTER setting adapter
+        // grab events from model
+        EventModel eventModel = new EventModel();
+
         adapter.notifyDataSetChanged();
 
         // FAB SETUP FOR ORGANIZER
@@ -126,34 +128,4 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-
-    private void defaultEvents() {
-
-        events.add(new Event("1", "Kids Swimming Lessons",
-                1732150800000L,
-                "Westside Community Pool",
-                R.drawable.swimming, 20, 0.0));
-
-        events.add(new Event("2", "Community Cooking Workshop",
-                1732237200000L,
-                "Downtown Community Kitchen",
-                R.drawable.cooking, 12, 10.0));
-
-        events.add(new Event("3", "Yoga in the Park",
-                1732323600000L,
-                "Central Park Stage",
-                R.drawable.yoga, 30, 5.0));
-
-        events.add(new Event("4", "Retro Stock Car Racing",
-                1732410000000L,
-                "City Raceway",
-                R.drawable.race, 25, 15.0));
-
-        events.add(new Event("5", "Recreational Soccer League",
-                1732496400000L,
-                "Maplewood Sports Field",
-                R.drawable.soccer, 22, 0.0));
-
-    }
-
 }

@@ -1,17 +1,13 @@
 package com.example.robotic_events_test;
 
 import android.util.Log;
-
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
-import com.google.firebase.firestore.SetOptions;
-
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 public class EventModel {
     private final FirebaseFirestore db;
@@ -22,50 +18,25 @@ public class EventModel {
         this.collectionName = collectionName;
         this.db = FirebaseFirestore.getInstance();
         this.eventsCollection = db.collection(collectionName);
-
-        // EventModel eventModel = new EventModel("events_mock");
     }
 
     EventModel() {
         this("events");
     }
 
-    public void saveEvent(
-            String id,
-            String title,
-            String description,
-            long dateTime,
-            String location,
-            int totalCapacity,
-            double price,
-            String organizerId,
-            String category,
-            String imageUrl
-    ) {
-        Map<String, Object> eventData = new HashMap<>();
-        eventData.put("title", title);
-        eventData.put("description", description);
-        eventData.put("dateTime", dateTime);
-        eventData.put("location", location);
-        eventData.put("category", category);
-        eventData.put("organizerId", organizerId);
-        eventData.put("totalCapacity", totalCapacity);
-        eventData.put("status", "open");
-        eventData.put("price", price);
-        eventData.put("imageUrl", imageUrl);
-        eventData.put("waitlist", new ArrayList<>());
+    public void saveEvent(Event event) {
+        String id = event.getId();
 
         if (id != null && !id.isEmpty()) {
-            eventData.put("id", id);
-            // .set() will overwrite the entire document.
+            // .set() will overwrite the entire document
             eventsCollection.document(id)
-                    .set(eventData)
+                    .set(event)
                     .addOnSuccessListener(aVoid ->
                             Log.d("EventModel", "Event saved with ID " + id))
                     .addOnFailureListener(e ->
                             Log.e("EventModel", "Error saving event", e));
         } else {
-            eventsCollection.add(eventData)
+            eventsCollection.add(event)
                     .addOnSuccessListener(documentRef -> {
                         String generatedId = documentRef.getId();
                         documentRef.update("id", generatedId);
@@ -76,19 +47,23 @@ public class EventModel {
         }
     }
 
-    public Task<DocumentSnapshot> getEvent(String id) {
-        return eventsCollection.document(id).get();
+    public Task<Event> getEvent(String id) {
+        return eventsCollection.document(id).get().continueWith(task -> {
+            DocumentSnapshot document = task.getResult();
+            if (document.exists()) {
+                return document.toObject(Event.class);
+            }
+            return null;
+        });
     }
 
-    public Task<QuerySnapshot> getAllEvents() {
-        return eventsCollection.get();
-    }
-
-    public Task<Void> updateEvent(String id, Map<String, Object> data) {
-        if (id == null || id.isEmpty()) {
-            throw new IllegalArgumentException("Document ID cannot be null or empty");
-        }
-        return eventsCollection.document(id).update(data);
+    public Task<List<Event>> getAllEvents() {
+        return eventsCollection.get().continueWith(task -> {
+            if (task.isSuccessful()) {
+                return task.getResult().toObjects(Event.class);
+            }
+            return new ArrayList<>();
+        });
     }
 
     public Task<Void> deleteEvent(String id) {
