@@ -19,8 +19,8 @@
 
         <ImageButton
             android:id="@+id/profileButton"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:layout_gravity="end|center_vertical"
             android:background="@drawable/ic_placeholder"
             android:src="@drawable/ic_profile"
@@ -86,7 +86,7 @@
             android:id="@+id/filter_button"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:background="#EEEEEE"
+            android:background="@drawable/rounded_button"
             android:contentDescription="Filter Events"
             android:src="@drawable/ic_filter"
             android:padding="8dp"
