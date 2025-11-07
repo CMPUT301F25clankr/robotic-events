@@ -45,7 +45,7 @@ public class EventRecyclerViewAdapter extends RecyclerView.Adapter<EventRecycler
         holder.eventDateTime.setText(formatDateTime(event.getDateTime()));
 
 
-        // holder.eventImage.setImageResource(event.getImageResId());
+        // holder.eventImage.setImageResource(R.drawable.yoga);
 
         holder.itemView.setOnClickListener(v -> {
             int currentPosition = holder.getAdapterPosition();

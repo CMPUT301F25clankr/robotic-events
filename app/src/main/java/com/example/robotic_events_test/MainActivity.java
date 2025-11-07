@@ -16,11 +16,13 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -46,8 +48,11 @@ public class MainActivity extends AppCompatActivity {
 
         // grab events from model
         EventModel eventModel = new EventModel();
-
-        adapter.notifyDataSetChanged();
+        Task<List<Event>> allEvents = eventModel.getAllEvents();
+        allEvents.addOnSuccessListener(eventList -> {
+            this.events.addAll(eventList);
+            adapter.notifyDataSetChanged();
+        });
 
         // FAB SETUP FOR ORGANIZER
         fabAddEvent = findViewById(R.id.fab_add_event);
