@@ -4,6 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
+    android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/white">
@@ -19,13 +20,12 @@
 
         <ImageButton
             android:id="@+id/profileButton"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:layout_gravity="end|center_vertical"
             android:background="@drawable/ic_placeholder"
             android:src="@drawable/ic_profile"
             android:layout_marginEnd="12dp"
-            android:clickable="true"
             android:clipToOutline="true"
             android:scaleType="centerInside"/>
 
@@ -39,7 +39,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="8dp"
-        app:queryHint="Search events..."
+        app:queryHint="Search Events..."
         app:iconifiedByDefault="false"
         />
 
@@ -86,7 +86,7 @@
             android:id="@+id/filter_button"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:background="@drawable/rounded_button"
+            android:background="#EEEEEE"
             android:contentDescription="Filter Events"
             android:src="@drawable/ic_filter"
             android:padding="8dp"

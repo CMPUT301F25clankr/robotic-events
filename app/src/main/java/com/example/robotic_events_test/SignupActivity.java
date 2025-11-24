@@ -1,6 +1,7 @@
 package com.example.robotic_events_test;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
@@ -71,6 +72,10 @@ public class SignupActivity extends AppCompatActivity {
 
                     db.collection("users").document(uid).set(user)
                             .addOnSuccessListener(unused -> {
+                                // Save to SharedPreferences
+                                SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+                                prefs.edit().putBoolean("isOrganizer", isOrganizer).apply();
+
                                 Toast.makeText(this, "Account created!", Toast.LENGTH_SHORT).show();
                                 startActivity(new Intent(this, MainActivity.class));
                                 finish();
@@ -78,6 +83,7 @@ public class SignupActivity extends AppCompatActivity {
                             .addOnFailureListener(e ->
                                     Toast.makeText(this, "Firestore Error: " + e.getMessage(), Toast.LENGTH_LONG).show()
                             );
+
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Signup Error: " + e.getMessage(), Toast.LENGTH_LONG).show());

@@ -1,206 +1,178 @@
 package com.example.robotic_events_test;
 
-import android.content.Intent;
+import android.annotation.SuppressLint;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.view.View;
-import android.view.ViewGroup;
+import android.text.format.DateFormat;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
-
-import androidx.annotation.Nullable;
+import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
-
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import android.graphics.Color;
-import android.widget.Toast;
+import java.util.ArrayList;
+import java.util.List;
 
 public class EventDetailActivity extends AppCompatActivity {
-    private final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, h:mm a", Locale.getDefault());
-    private FloatingActionButton fabEditEvent;
 
-    private String organizerId;
+    private Event event;
+    private FirebaseFirestore db;
+    private FirebaseAuth auth;
+    private boolean isInWaitlist = false;
+    private boolean isOrganizer = false;
 
+    @SuppressLint({"SetTextI18n", "DefaultLocale"})
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_event_detail);
 
-        ImageView image   = findViewById(R.id.detailImage);
-        TextView title    = findViewById(R.id.detailTitle);
-        TextView when     = findViewById(R.id.detailWhen);
-        TextView where    = findViewById(R.id.detailWhere);
-        TextView price    = findViewById(R.id.detailPrice);
+        db = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
 
-//        TextView status   = findViewById(R.id.detailStatus);
-        TextView category = findViewById(R.id.detailCategory);
-        TextView org      = findViewById(R.id.detailOrganizer);
-        TextView cap      = findViewById(R.id.detailCapacity);
-        TextView desc     = findViewById(R.id.detailDescription);
-        TextView waitlist = findViewById(R.id.detailWaitlist);
-
-        String id          = getIntent().getStringExtra("id");
-        String t           = safe(getIntent().getStringExtra("title"));
-        String d           = safe(getIntent().getStringExtra("description"));
-        long dateTime      = getIntent().getLongExtra("dateTime", 0L);
-        String loc         = safe(getIntent().getStringExtra("location"));
-        String cat         = safe(getIntent().getStringExtra("category"));
-        organizerId        = safe(getIntent().getStringExtra("organizerId"));
-        int totalCapacity  = getIntent().getIntExtra("totalCapacity", 0);
-        String st          = safe(getIntent().getStringExtra("status"));
-        int imgResId       = getIntent().getIntExtra("imageResId", 0);
-        double pr          = getIntent().getDoubleExtra("price", 0.0);
-
-        fabEditEvent = findViewById(R.id.fab_edit_event);
-        setupFabForOrganizer();
-        fabEditEvent.setOnClickListener(view -> {
-            Intent intent = new Intent(EventDetailActivity.this, EventEditActivity.class);
-            intent.putExtra("id", id);
-            startActivity(intent);
-        });
-
-        // LOCAL (user) waitlistCount - queried once, only modified for local user
-        AtomicInteger waitlistCount = new AtomicInteger();
-
-        if (imgResId != 0) image.setImageResource(imgResId);
-        title.setText(t.isEmpty() ? "(Untitled Event)" : t);
-        when.setText(dateTime > 0 ? sdf.format(new Date(dateTime)) : "");
-        where.setText(loc);
-        price.setText(pr > 0 ? String.format(Locale.getDefault(), "$%.2f", pr) : "Free");
-
-//        status.setText(st);
-        cap.setText(totalCapacity > 0 ? String.format(Locale.getDefault(),
-                "Capacity\n%d", totalCapacity) : "Unlimited");
-
-
-// Get parent
-        ViewGroup parent = (ViewGroup) desc.getParent();
-
-        // Delete empty views
-        if (organizerId.isEmpty()) { parent.removeView(org); }
-
-        if (d.isEmpty()) { parent.removeView(desc); }
-
-        if (cat.isEmpty()) { parent.removeView(category); }
-
-        org.setText(organizerId);
-        desc.setText(d);
-        category.setText(cat);
-
-        // Get toolbar; allow navigation back to home page
-        MaterialToolbar toolbar = findViewById(R.id.eventDetailToolbar);
-        setSupportActionBar(toolbar);
-        toolbar.setNavigationOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
-
-
-        Button joinButton = findViewById(R.id.joinLeaveWaitlistButton);
-        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-
-        if (currentUser != null) {
-            String userId = currentUser.getUid();
-            FirebaseFirestore db = FirebaseFirestore.getInstance();
-            String docId = id + "_" + userId;
-
-            db.collection("waitlists").document(docId).get()
-                    .addOnSuccessListener(document -> {
-                        if (document.exists()) {
-                            joinButton.setText("Leave Waitlist");
-                            joinButton.setBackgroundColor(Color.parseColor("#ff0f0f"));
-                        } else {
-                            joinButton.setText("Join Waitlist");
-                            joinButton.setBackgroundColor(Color.parseColor("#008000"));
-                        }
-                    });
-
-            //COUNT STORES WAITLIST COUNT
-            db.collection("waitlists")
-                    .whereEqualTo("eventId", id)
-                    .get()
-                    .addOnSuccessListener(snapshot -> {
-                        waitlistCount.set(snapshot.size());
-                        waitlist.setText(String.format(Locale.getDefault(), "Waitlisted\n%d", waitlistCount.get()));
-                        //Toast.makeText(this, "Total waitlisted: " + waitlistCount, Toast.LENGTH_SHORT).show();
-                    })
-                    .addOnFailureListener(e ->
-                            Log.e("Waitlist", "Error fetching waitlist count", e)
-                    );
-
+        // Get passed event
+        event = (Event) getIntent().getSerializableExtra("event");
+        if (event == null) {
+            Toast.makeText(this, "Error: Event not found", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
         }
 
-        joinButton.setOnClickListener(v -> {
-            if (currentUser == null) return;
-            if (waitlistDebounce) return; // ignore rapid clicks
-            waitlistDebounce = true;
+        // Check if current user is the organizer
+        if (auth.getCurrentUser() != null) {
+            isOrganizer = event.getOrganizerId().equals(auth.getCurrentUser().getUid());
+        }
 
-            String userId = currentUser.getUid();
-            String docId = id + "_" + userId;
-            FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-            db.collection("waitlists").document(docId).get()
-                    .addOnSuccessListener(document -> {
-                        if (document.exists()) {
-                            //remove from wait list
-                            db.collection("waitlists").document(docId).delete()
-                                    .addOnSuccessListener(aVoid -> {
-                                        joinButton.setText("Join Waitlist");
-                                        joinButton.setBackgroundColor(Color.parseColor("#008000"));
-                                        waitlistCount.set(waitlistCount.get() - 1);
-                                        waitlist.setText(String.format(Locale.getDefault(), "Waitlisted\n%d", waitlistCount.get()));
-                                        //Toast.makeText(this, "Removed from waitlist", Toast.LENGTH_SHORT).show();
-
-                                        // Debounce
-                                        new Handler(Looper.getMainLooper()).postDelayed(() -> waitlistDebounce = false, 500);
-                                    });
-                        } else {
-                            // add to waitlist
-                            Waitlist entry = new Waitlist(id, userId, System.currentTimeMillis());
-                            db.collection("waitlists").document(docId).set(entry)
-                                    .addOnSuccessListener(aVoid -> {
-                                        joinButton.setText("Leave Waitlist");
-                                        joinButton.setBackgroundColor(Color.parseColor("#ff0f0f"));
-                                        waitlistCount.set(waitlistCount.get() + 1);
-                                        waitlist.setText(String.format(Locale.getDefault(), "Waitlisted\n%d", waitlistCount.get()));
-                                        //Toast.makeText(this, "Added to waitlist", Toast.LENGTH_SHORT).show();
-
-                                        // Debounce
-                                        new Handler(Looper.getMainLooper()).postDelayed(() -> waitlistDebounce = false, 500);
-                                    });
-                        }
-                    });
+        // Setup Toolbar with back button
+        MaterialToolbar toolbar = findViewById(R.id.eventDetailToolbar);
+        toolbar.setNavigationOnClickListener(v -> {
+            Log.d("EventDetail", "Back button clicked");
+            finish();
         });
-    }
 
-    private void setupFabForOrganizer() {
-        String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        FirebaseFirestore.getInstance().collection("users").document(uid).get().addOnSuccessListener(documentSnapshot -> {
-            User user = documentSnapshot.toObject(User.class);
-            if (user != null && user.isOrganizer()) {
-                fabEditEvent.setVisibility(View.VISIBLE);
-            } else {
-                fabEditEvent.setVisibility(View.GONE);
-            }
-        });/*
-        if (organizerId.equals(uid)) {
+        // Views from XML
+        ImageView detailImage = findViewById(R.id.detailImage);
+        TextView detailTitle = findViewById(R.id.detailTitle);
+        TextView detailWhen = findViewById(R.id.detailWhen);
+        TextView detailWhere = findViewById(R.id.detailWhere);
+        TextView detailWaitlist = findViewById(R.id.detailWaitlist);
+        TextView detailCapacity = findViewById(R.id.detailCapacity);
+        TextView detailPrice = findViewById(R.id.detailPrice);
+        TextView detailCategory = findViewById(R.id.detailCategory);
+        TextView detailOrganizer = findViewById(R.id.detailOrganizer);
+        TextView detailDescription = findViewById(R.id.detailDescription);
+        Button joinLeaveWaitlistButton = findViewById(R.id.joinLeaveWaitlistButton);
+        FloatingActionButton fabEditEvent = findViewById(R.id.fab_edit_event);
+
+        // Show edit FAB only if user is organizer
+        if (isOrganizer) {
             fabEditEvent.setVisibility(View.VISIBLE);
+            fabEditEvent.setOnClickListener(v -> {
+                // TODO: Navigate to EventEditActivity
+                Toast.makeText(this, "Edit event (not implemented yet)", Toast.LENGTH_SHORT).show();
+            });
         } else {
             fabEditEvent.setVisibility(View.GONE);
-        }*/
+        }
+
+        // Populate UI
+        detailTitle.setText(event.getTitle());
+        detailWhen.setText(DateFormat.format("MMM dd, yyyy h:mm a", event.getDateTime()));
+        detailWhere.setText(event.getLocation());
+
+        int waitlistSize = (event.getWaitlist() != null ? event.getWaitlist().size() : 0);
+        detailWaitlist.setText("Waitlisted\n" + waitlistSize);
+        detailCapacity.setText("Capacity\n" + event.getTotalCapacity());
+        detailPrice.setText(String.format("$%.2f", event.getPrice()));
+        detailCategory.setText(event.getCategory());
+        detailOrganizer.setText("Organizer ID: " + event.getOrganizerId());
+        detailDescription.setText(event.getDescription() != null ? event.getDescription() : "No description available");
+
+        // Check if user is already in waitlist
+        checkWaitlistStatus(joinLeaveWaitlistButton);
+
+        // Waitlist button
+        joinLeaveWaitlistButton.setOnClickListener(v -> {
+            Log.d("EventDetail", "Waitlist button clicked");
+            if (auth.getCurrentUser() == null) {
+                Toast.makeText(this, "Please log in to join waitlist", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            toggleWaitlist(joinLeaveWaitlistButton, detailWaitlist);
+        });
+
+        // TODO: Load event image using Glide or Picasso if imageUrl exists
+        // if (event.getImageUrl() != null) {
+        //     Glide.with(this).load(event.getImageUrl()).into(detailImage);
+        // }
     }
 
-    private String safe(String s) { return s == null ? "" : s; }
-    private boolean waitlistDebounce = false;
+    private void checkWaitlistStatus(Button button) {
+        if (auth.getCurrentUser() == null) {
+            button.setText("Join Waitlist");
+            return;
+        }
 
+        String userId = auth.getCurrentUser().getUid();
+        List<String> waitlist = event.getWaitlist();
+
+        if (waitlist != null && waitlist.contains(userId)) {
+            isInWaitlist = true;
+            button.setText("Leave Waitlist");
+        } else {
+            isInWaitlist = false;
+            button.setText("Join Waitlist");
+        }
+    }
+
+    private void toggleWaitlist(Button button, TextView waitlistTextView) {
+        String userId = auth.getCurrentUser().getUid();
+
+        if (isInWaitlist) {
+            // Remove from waitlist
+            db.collection("events").document(event.getId())
+                    .update("waitlist", com.google.firebase.firestore.FieldValue.arrayRemove(userId))
+                    .addOnSuccessListener(aVoid -> {
+                        isInWaitlist = false;
+                        button.setText("Join Waitlist");
+                        Toast.makeText(this, "Removed from waitlist", Toast.LENGTH_SHORT).show();
+
+                        // Update local event object and UI
+                        if (event.getWaitlist() != null) {
+                            event.getWaitlist().remove(userId);
+                            int newSize = event.getWaitlist().size();
+                            waitlistTextView.setText("Waitlisted\n" + newSize);
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Failed to leave waitlist", Toast.LENGTH_SHORT).show();
+                        Log.e("EventDetail", "Error removing from waitlist", e);
+                    });
+        } else {
+            // Add to waitlist
+            db.collection("events").document(event.getId())
+                    .update("waitlist", com.google.firebase.firestore.FieldValue.arrayUnion(userId))
+                    .addOnSuccessListener(aVoid -> {
+                        isInWaitlist = true;
+                        button.setText("Leave Waitlist");
+                        Toast.makeText(this, "Added to waitlist!", Toast.LENGTH_SHORT).show();
+
+                        // Update local event object and UI
+                        if (event.getWaitlist() == null) {
+                            event.setWaitlist(new ArrayList<>());
+                        }
+                        event.getWaitlist().add(userId);
+                        int newSize = event.getWaitlist().size();
+                        waitlistTextView.setText("Waitlisted\n" + newSize);
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Failed to join waitlist", Toast.LENGTH_SHORT).show();
+                        Log.e("EventDetail", "Error adding to waitlist", e);
+                    });
+        }
+    }
 }

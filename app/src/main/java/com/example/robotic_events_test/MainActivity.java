@@ -1,136 +1,137 @@
 package com.example.robotic_events_test;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.Toast;
+import android.widget.LinearLayout;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.gms.tasks.Task;
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    ArrayList<Event> events = new ArrayList<>();
-    private ImageButton profileButton;
-    // for organizers
+    private ArrayList<Event> events = new ArrayList<>();
+    private EventRecyclerViewAdapter adapter;
+    private boolean isOrganizer = false;
     private FloatingActionButton fabAddEvent;
     private FirebaseAuth auth;
     private FirebaseFirestore db;
+    private LinearLayout rootLayout;  // Changed from ConstraintLayout to LinearLayout
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        RecyclerView recyclerView = findViewById(R.id.events_container);
-        EventRecyclerViewAdapter adapter = new EventRecyclerViewAdapter(this, events);
-        recyclerView.setAdapter(adapter);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-
-        profileButton = findViewById(R.id.profileButton);
-
-        // grab events from model
-        EventModel eventModel = new EventModel();
-        Task<List<Event>> allEvents = eventModel.getAllEvents();
-        allEvents.addOnSuccessListener(eventList -> {
-            this.events.addAll(eventList);
-            adapter.notifyDataSetChanged();
-        });
-
-        // FAB SETUP FOR ORGANIZER
-        fabAddEvent = findViewById(R.id.fab_add_event);
-        db = FirebaseFirestore.getInstance();
         auth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
 
-        setupFabForOrganizer(); // makes it visible if user is organizer
-
-        fabAddEvent.setOnClickListener(view -> {
-            Intent intent = new Intent(MainActivity.this, EventCreationActivity.class);
+        // Require login
+        if (auth.getCurrentUser() == null) {
+            Intent intent = new Intent(this, LoginActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
-        });
-        // END FAB SETUP FOR OGANIZER
+            finish();
+            return;
+        }
 
-        fabAddEvent.setOnClickListener(view -> {
-            // Start the EventCreationActivity
-            Intent intent = new Intent(MainActivity.this, EventCreationActivity.class);
-            startActivity(intent);
-        });
+        rootLayout = findViewById(R.id.rootLayout);
+        fabAddEvent = findViewById(R.id.fab_add_event);
+        ImageButton profileButton = findViewById(R.id.profileButton);
+        MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        Button myEventsButton = findViewById(R.id.my_events_button);
+        ImageButton qrButton = findViewById(R.id.qr_button);
 
-        androidx.appcompat.widget.SearchView searchBar = findViewById(R.id.search_bar);
+        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+        isOrganizer = prefs.getBoolean("isOrganizer", false);
+
+        // Apply theme colors based on role
+        if (isOrganizer) {
+            // Organizer blue theme
+            rootLayout.setBackgroundColor(Color.parseColor("#E3F2FD")); // Light blue background
+            toolbar.setBackgroundColor(Color.parseColor("#1976D2")); // Blue toolbar
+            myEventsButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#1976D2"))); // Blue button
+            qrButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#1976D2"))); // Blue QR button
+            fabAddEvent.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#1976D2"))); // Blue FAB
+        } else {
+            // User purple theme
+            rootLayout.setBackgroundColor(Color.parseColor("#F3E5F5")); // Light purple background
+            toolbar.setBackgroundColor(Color.parseColor("#7B1FA2")); // Purple toolbar
+            myEventsButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#7B1FA2"))); // Purple button
+            qrButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#7B1FA2"))); // Purple QR button
+        }
+
+        fabAddEvent.setVisibility(isOrganizer ? View.VISIBLE : View.GONE);
+        fabAddEvent.setOnClickListener(v -> startActivity(new Intent(this, EventCreationActivity.class)));
+
+        profileButton.setOnClickListener(v -> startActivity(new Intent(this, ProfileActivity.class)));
+
+        RecyclerView recyclerView = findViewById(R.id.events_container);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        adapter = new EventRecyclerViewAdapter(this, events, isOrganizer);
+        recyclerView.setAdapter(adapter);
+
+        SearchView searchBar = findViewById(R.id.search_bar);
         searchBar.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                ArrayList<Event> filteredEvents = new ArrayList<>();
-                EventRecyclerViewAdapter filteredAdapter = new EventRecyclerViewAdapter(MainActivity.this, filteredEvents);
-
-                if (query.isEmpty()) {
-                    recyclerView.setAdapter(adapter);
-                }
-
-                for (Event event : events) {
-                    String title = event.getTitle().toLowerCase();
-                    if (title.contains(query.toLowerCase())) {
-                        filteredEvents.add(event);
-                    }
-                }
-                filteredAdapter.notifyDataSetChanged();
-                recyclerView.setAdapter(filteredAdapter);
+                filterEvents(query, recyclerView);
                 return false;
             }
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                ArrayList<Event> filteredEvents = new ArrayList<>();
-                EventRecyclerViewAdapter filteredAdapter = new EventRecyclerViewAdapter(MainActivity.this, filteredEvents);
-
-                if (newText.isEmpty()) {
-                    recyclerView.setAdapter(adapter);
-                }
-
-                for (Event event : events) {
-                    String title = event.getTitle().toLowerCase();
-                    if (title.contains(newText.toLowerCase())) {
-                        filteredEvents.add(event);
-                    }
-                }
-                filteredAdapter.notifyDataSetChanged();
-                recyclerView.setAdapter(filteredAdapter);
+                filterEvents(newText, recyclerView);
                 return false;
             }
         });
-        profileButton.setOnClickListener(v -> {
-            startActivity(new Intent(this, ProfileActivity.class));
-        });
 
+        loadEventsFromFirestore();
     }
 
-    private void setupFabForOrganizer() {
-        String uid = auth.getCurrentUser().getUid();
 
-        db.collection("users").document(uid).get().addOnSuccessListener(documentSnapshot -> {
-            User user = documentSnapshot.toObject(User.class);
-            if (user != null && user.isOrganizer()) {
-                fabAddEvent.setVisibility(View.VISIBLE);
-            } else {
-                fabAddEvent.setVisibility(View.GONE);
-            }
+    private void loadEventsFromFirestore() {
+        EventModel eventModel = new EventModel();
+        eventModel.getAllEvents().addOnSuccessListener(eventList -> {
+            events.clear();
+            events.addAll(eventList);
+            adapter.notifyDataSetChanged();
+        }).addOnFailureListener(e -> {
+            Toast.makeText(this, "Failed to load events.", Toast.LENGTH_SHORT).show();
+            Log.e("MainActivity", "Fetch events error", e);
         });
+    }
+
+    private void filterEvents(String query, RecyclerView recyclerView) {
+        if (query == null || query.trim().isEmpty()) {
+            recyclerView.setAdapter(adapter);
+            adapter.notifyDataSetChanged();
+            return;
+        }
+        ArrayList<Event> filteredEvents = new ArrayList<>();
+        for (Event event : events) {
+            String title = event.getTitle() != null ? event.getTitle().toLowerCase() : "";
+            if (title.contains(query.toLowerCase())) {
+                filteredEvents.add(event);
+            }
+        }
+        EventRecyclerViewAdapter filteredAdapter = new EventRecyclerViewAdapter(this, filteredEvents, isOrganizer);
+        recyclerView.setAdapter(filteredAdapter);
+        filteredAdapter.notifyDataSetChanged();
     }
 }

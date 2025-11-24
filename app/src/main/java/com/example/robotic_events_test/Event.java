@@ -6,11 +6,11 @@ import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Represents an event in the Robotic Events application.
- * This class contains all details about an event such as its title, description, date/time, location, organizer, capacity, price, and image resource.
- */
-public class Event {
+import java.io.Serializable;
+
+public class Event implements Serializable {
+    // Rest of your code stays the same
+
 
     private String id;
     private String title;
@@ -95,4 +95,6 @@ public class Event {
     public void setPrice(double price) { this.price = price; }
     public List<String> getWaitlist() { return waitlist; }
     public void setWaitlist(List<String> waitlist) { this.waitlist = waitlist; }
+
+
 }

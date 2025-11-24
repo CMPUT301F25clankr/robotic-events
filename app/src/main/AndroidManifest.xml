@@ -7,20 +7,20 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
+        android:label="robotic_events_test"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Roboticeventstest">
 
         <!-- Sign up -->
         <activity
-            android:name=".SignupActivity"
+            android:name="com.example.robotic_events_test.SignupActivity"
             android:exported="false"
             android:theme="@style/Theme.Roboticeventstest" />
 
         <!-- Login is the launcher -->
         <activity
-            android:name=".LoginActivity"
+            android:name="com.example.robotic_events_test.LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -30,24 +30,24 @@
 
         <!-- Main list of events -->
         <activity
-            android:name=".MainActivity"
+            android:name="com.example.robotic_events_test.MainActivity"
             android:exported="false" />
 
         <!-- NEW: Event details screen opened on row click -->
         <activity
-            android:name=".EventDetailActivity"
+            android:name="com.example.robotic_events_test.EventDetailActivity"
             android:exported="false" />
 
         <activity
-            android:name=".ProfileActivity"
+            android:name="com.example.robotic_events_test.ProfileActivity"
             android:exported="false" />
 
         <activity
-            android:name=".EventCreationActivity"
+            android:name="com.example.robotic_events_test.EventCreationActivity"
             android:exported="false" />
 
         <activity
-            android:name=".EventEditActivity"
+            android:name="com.example.robotic_events_test.EventEditActivity"
             android:exported="false" />
 
     </application>

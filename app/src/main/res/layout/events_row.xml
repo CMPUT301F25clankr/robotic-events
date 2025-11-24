@@ -1,56 +1,96 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Row with ripple + no focus stealing -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/eventRowRoot"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:padding="0dp"
     android:layout_marginTop="8dp"
-    android:layout_marginHorizontal="8dp"
-    android:foreground="?attr/selectableItemBackground"
-    android:background="#EDE2FF"
-    android:clickable="true"
-    android:focusable="true"
-    android:descendantFocusability="blocksDescendants">
+    android:layout_marginHorizontal="8dp">
 
-    <ImageView
-        android:id="@+id/eventImage"
-        android:scaleType="centerCrop"
-        android:layout_width="75dp"
-        android:layout_height="75dp"
-        android:layout_marginEnd="12dp"
-        android:contentDescription="@string/app_name"
-        android:src="@drawable/ic_launcher_foreground" />
-
+    <!-- Main card layout -->
     <LinearLayout
-        android:layout_width="0dp"
-        android:layout_marginTop="3dp"
+        android:id="@+id/eventRowRoot"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:orientation="vertical">
+        android:orientation="horizontal"
+        android:padding="0dp"
+        android:foreground="?attr/selectableItemBackground"
+        android:background="#EDE2FF"
+        android:clickable="true"
+        android:focusable="true">
 
-        <TextView
-            android:id="@+id/eventTitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Event Title"
-            android:textStyle="bold"
-            android:textSize="16sp" />
+        <ImageView
+            android:id="@+id/eventImage"
+            android:scaleType="centerCrop"
+            android:layout_width="75dp"
+            android:layout_height="75dp"
+            android:layout_marginEnd="12dp"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/ic_launcher_foreground" />
 
-        <TextView
-            android:id="@+id/eventDateTime"
-            android:layout_width="match_parent"
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_marginTop="3dp"
             android:layout_height="wrap_content"
-            android:text="Jan 01, 1:00 PM"
-            android:alpha="0.85" />
+            android:layout_weight="1"
+            android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/eventLocation"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Location"
-            android:alpha="0.85" />
+            <TextView
+                android:id="@+id/eventTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Event Title"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:paddingEnd="60dp"
+                android:clickable="false"
+                android:focusable="false" />
+            <TextView
+                android:id="@+id/eventDateTime"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Jan 01, 1:00 PM"
+                android:alpha="0.85" />
+
+            <TextView
+                android:id="@+id/eventLocation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Location"
+                android:alpha="0.85" />
+
+            <!-- Capacity Indicator -->
+            <TextView
+                android:id="@+id/capacityIndicator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#616161"
+                android:drawableStart="@android:drawable/ic_menu_myplaces"
+                android:drawablePadding="4dp"
+                android:visibility="gone"
+                android:text="50 spots"/>
+
+        </LinearLayout>
+
     </LinearLayout>
 
-</LinearLayout>
+    <!-- Status Badge (overlayed at top-right corner) -->
+    <TextView
+        android:id="@+id/statusBadge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:paddingHorizontal="10dp"
+        android:paddingVertical="4dp"
+        android:text="OPEN"
+        android:textColor="#FFFFFF"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:background="@drawable/badge_background"
+        android:elevation="2dp"
+        android:visibility="gone"/>
+
+</FrameLayout>

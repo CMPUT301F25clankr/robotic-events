@@ -18,13 +18,13 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.util.Calendar;
+import java.util.Objects;
 
 public class EventCreationActivity extends AppCompatActivity {
 
     private EditText eventTitleSetter, eventCapacitySetter;
     private DatePicker eventDatePicker;
     private TimePicker eventTimePicker;
-    private Button eventCreationConfirm;
     private EventModel eventModel;
 
     @Override
@@ -36,7 +36,7 @@ public class EventCreationActivity extends AppCompatActivity {
 
         Toolbar toolbar = findViewById(R.id.eventCreationToolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setTitle("Create an Event");
 
 
@@ -51,7 +51,7 @@ public class EventCreationActivity extends AppCompatActivity {
         eventDatePicker = findViewById(R.id.eventDatePicker);
         eventTimePicker = findViewById(R.id.eventTimePicker);
         // button to send form data to this activity
-        eventCreationConfirm = findViewById(R.id.eventCreationConfirm);
+        Button eventCreationConfirm = findViewById(R.id.eventCreationConfirm);
 
         eventCreationConfirm.setOnClickListener(v -> createEvent());
     }

@@ -110,15 +110,15 @@
 
                     <TextView
                         android:id="@+id/detailWaitlist"
-                        android:background="@android:color/holo_orange_dark"
                         android:layout_width="80dp"
                         android:layout_height="50dp"
+                        android:layout_marginLeft="8dp"
+                        android:background="@android:color/holo_orange_dark"
                         android:gravity="center"
                         android:text="Waitlisted\n0"
-                        android:textColor="@android:color/white"
-                        android:textStyle="bold"
+                        android:textColor="#455A64"
                         android:textSize="14sp"
-                        android:layout_marginLeft="8dp"/>
+                        android:textStyle="bold" />
 
                     <TextView
                         android:id="@+id/detailCapacity"
@@ -162,9 +162,8 @@
                 android:id="@+id/detailOrganizer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Organizer"
-                android:layout_marginTop="4dp" />
-
+                android:layout_marginTop="4dp"
+                android:text="Organizer" />
 
             <TextView
                 android:id="@+id/detailDescription"

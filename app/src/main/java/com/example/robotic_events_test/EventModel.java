@@ -10,13 +10,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EventModel {
-    private final FirebaseFirestore db;
-    private final String collectionName;
     private final CollectionReference eventsCollection;
 
     EventModel(String collectionName) {
-        this.collectionName = collectionName;
-        this.db = FirebaseFirestore.getInstance();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
         this.eventsCollection = db.collection(collectionName);
     }
 
