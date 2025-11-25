@@ -81,6 +81,8 @@ public class MainActivity extends AppCompatActivity {
 
         profileButton.setOnClickListener(v -> startActivity(new Intent(this, ProfileActivity.class)));
 
+        qrButton.setOnClickListener(v -> startActivity(new Intent(this, QRScanRedirect.class)));
+
         RecyclerView recyclerView = findViewById(R.id.events_container);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         adapter = new EventRecyclerViewAdapter(this, events, isOrganizer);

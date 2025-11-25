@@ -48,10 +48,17 @@ dependencies {
     implementation("androidx.navigation:navigation-fragment-ktx:2.9.6")
     implementation("androidx.navigation:navigation-ui-ktx:2.9.6")
 
+    // ZXing for QR Code
+    implementation("com.journeyapps:zxing-android-embedded:4.1.0")
+
     // Firebase (BOM keeps versions aligned)
     implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
+    implementation(libs.constraintlayout)
+    implementation(libs.navigation.fragment)
+    implementation(libs.navigation.ui)
+    implementation(libs.activity)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

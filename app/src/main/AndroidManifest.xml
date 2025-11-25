@@ -11,50 +11,44 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Roboticeventstest">
-
-        <!-- Sign up -->
         <activity
-            android:name="com.example.robotic_events_test.SignupActivity"
+            android:name=".QRScanRedirect"
+            android:exported="false" />
+        <activity
+            android:name=".QRScanRedirectActivity"
             android:exported="false"
-            android:theme="@style/Theme.Roboticeventstest" />
-
-        <!-- Login is the launcher -->
+            android:theme="@style/Theme.Roboticeventstest" /> <!-- Sign up -->
         <activity
-            android:name="com.example.robotic_events_test.LoginActivity"
+            android:name=".SignupActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Roboticeventstest" /> <!-- Login is the launcher -->
+        <activity
+            android:name=".LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-
-        <!-- Main list of events -->
+        </activity> <!-- Main list of events -->
         <activity
-            android:name="com.example.robotic_events_test.MainActivity"
+            android:name=".MainActivity"
             android:exported="false" />
-
         <activity
             android:name=".LotteryResultActivity"
-            android:exported="false" />
-
-
-        <!-- NEW: Event details screen opened on row click -->
+            android:exported="false" /> <!-- NEW: Event details screen opened on row click -->
         <activity
-            android:name="com.example.robotic_events_test.EventDetailActivity"
+            android:name=".EventDetailActivity"
             android:exported="false" />
-
         <activity
-            android:name="com.example.robotic_events_test.ProfileActivity"
+            android:name=".ProfileActivity"
             android:exported="false" />
-
         <activity
-            android:name="com.example.robotic_events_test.EventCreationActivity"
+            android:name=".EventCreationActivity"
             android:exported="false" />
-
         <activity
-            android:name="com.example.robotic_events_test.EventEditActivity"
+            android:name=".EventEditActivity"
             android:exported="false" />
-
     </application>
 
 </manifest>

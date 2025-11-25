@@ -7,7 +7,7 @@
     android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/appbackground">
+    android:background="@color/white">
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
@@ -57,7 +57,7 @@
             android:layout_height="48dp"
             android:background="@drawable/rounded_button"
             android:text="My Events"
-            android:textColor="@color/appbackground"
+            android:textColor="@color/white"
             android:textSize="15sp"
             android:paddingHorizontal="16dp"
             app:layout_constraintTop_toTopOf="parent"
