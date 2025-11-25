@@ -64,9 +64,24 @@ public class EventModel {
             return new ArrayList<>();
         });
     }
+
+    // ADDED: Get events only for a specific organizer
+    public Task<List<Event>> getOrganizerEvents(String organizerId) {
+        return eventsCollection.whereEqualTo("organizerId", organizerId).get().continueWith(task -> {
+            if (task.isSuccessful()) {
+                return task.getResult().toObjects(Event.class);
+            }
+            return new ArrayList<>();
+        });
+    }
     
     public ListenerRegistration addEventsListener(EventListener<QuerySnapshot> listener) {
         return eventsCollection.addSnapshotListener(listener);
+    }
+
+    // ADDED: Real-time listener filtered by organizer
+    public ListenerRegistration addOrganizerEventsListener(String organizerId, EventListener<QuerySnapshot> listener) {
+        return eventsCollection.whereEqualTo("organizerId", organizerId).addSnapshotListener(listener);
     }
 
     public Task<Void> deleteEvent(String id) {

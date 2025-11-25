@@ -124,22 +124,45 @@ public class MainActivity extends AppCompatActivity {
     private void loadEventsFromFirestore() {
         EventModel eventModel = new EventModel();
         
-        // Use real-time listener instead of one-time get
-        eventListener = eventModel.addEventsListener((value, error) -> {
-            if (error != null) {
-                Log.e("MainActivity", "Listen failed.", error);
-                Toast.makeText(this, "Error loading events", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            
-            if (value != null) {
-                events.clear();
-                for (com.google.firebase.firestore.DocumentSnapshot doc : value.getDocuments()) {
-                    events.add(doc.toObject(Event.class));
+        // Filter logic: 
+        // If Organizer: Show only their own events.
+        // If User: Show ALL events.
+        
+        if (isOrganizer) {
+            String currentUserId = auth.getCurrentUser().getUid();
+            eventListener = eventModel.addOrganizerEventsListener(currentUserId, (value, error) -> {
+                if (error != null) {
+                    Log.e("MainActivity", "Listen failed.", error);
+                    Toast.makeText(this, "Error loading events", Toast.LENGTH_SHORT).show();
+                    return;
                 }
-                adapter.notifyDataSetChanged();
-            }
-        });
+                
+                if (value != null) {
+                    events.clear();
+                    for (com.google.firebase.firestore.DocumentSnapshot doc : value.getDocuments()) {
+                        events.add(doc.toObject(Event.class));
+                    }
+                    adapter.notifyDataSetChanged();
+                }
+            });
+        } else {
+            // Standard user sees all events
+            eventListener = eventModel.addEventsListener((value, error) -> {
+                if (error != null) {
+                    Log.e("MainActivity", "Listen failed.", error);
+                    Toast.makeText(this, "Error loading events", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                
+                if (value != null) {
+                    events.clear();
+                    for (com.google.firebase.firestore.DocumentSnapshot doc : value.getDocuments()) {
+                        events.add(doc.toObject(Event.class));
+                    }
+                    adapter.notifyDataSetChanged();
+                }
+            });
+        }
     }
 
     private void filterEvents(String query, RecyclerView recyclerView) {
