@@ -17,7 +17,7 @@ public class WaitlistTest {
     public void testConstructorAndGetters() {
         assertEquals("event123", waitlist.getEventId());
         assertEquals("userABC", waitlist.getUserId());
-        assertEquals(1700000000000L, waitlist.getTimestamp());
+        assertEquals(1700000000000L, waitlist.getJoinedAt());
         assertEquals("waiting", waitlist.getState());
     }
 
@@ -25,12 +25,12 @@ public class WaitlistTest {
     public void testSetters() {
         waitlist.setEventId("newEvent");
         waitlist.setUserId("newUser");
-        waitlist.setTimestamp(12345L);
+        waitlist.setJoinedAt(12345L);
         waitlist.setState("joined");
 
         assertEquals("newEvent", waitlist.getEventId());
         assertEquals("newUser", waitlist.getUserId());
-        assertEquals(12345L, waitlist.getTimestamp());
+        assertEquals(12345L, waitlist.getJoinedAt());
         assertEquals("joined", waitlist.getState());
     }
 

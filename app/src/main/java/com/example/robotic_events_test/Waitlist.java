@@ -13,8 +13,8 @@ public class Waitlist {
     /** The unique identifier of the user who joined the waitlist. */
     private String userId;
 
-    /** The timestamp (in milliseconds) indicating when the user joined the waitlist. */
-    private long timestamp;
+    /** The joinedAt (in milliseconds) indicating when the user joined the waitlist. */
+    private long joinedAt;
 
     /** The current state of the waitlist entry (default: "waiting"). */
     private String state;
@@ -29,12 +29,12 @@ public class Waitlist {
      *
      * @param eventId   The ID of the event the user is waitlisted for
      * @param userId    The ID of the user joining the waitlist
-     * @param timestamp The time (in milliseconds) when the user joined the waitlist
+     * @param joinedAt The time (in milliseconds) when the user joined the waitlist
      */
-    public Waitlist(String eventId, String userId, long timestamp) {
+    public Waitlist(String eventId, String userId, long joinedAt) {
         this.eventId = eventId;
         this.userId = userId;
-        this.timestamp = timestamp;
+        this.joinedAt = joinedAt;
         this.state = "waiting";
     }
 
@@ -67,18 +67,18 @@ public class Waitlist {
     public void setUserId(String userId) { this.userId = userId; }
 
     /**
-     * Returns the timestamp representing when the user joined the waitlist.
+     * Returns the joinedAt representing when the user joined the waitlist.
      *
-     * @return the timestamp in milliseconds
+     * @return the joinedAt in milliseconds
      */
-    public long getTimestamp() { return timestamp; }
+    public long getJoinedAt() { return joinedAt; }
 
     /**
-     * Sets the timestamp for when the user joined the waitlist.
+     * Sets the joinedAt for when the user joined the waitlist.
      *
-     * @param timestamp the timestamp in milliseconds
+     * @param joinedAt the joinedAt in milliseconds
      */
-    public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
+    public void setJoinedAt(long joinedAt) { this.joinedAt = joinedAt; }
 
     /**
      * Returns the current state of the waitlist entry.

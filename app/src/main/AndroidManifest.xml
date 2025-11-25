@@ -33,6 +33,11 @@
             android:name="com.example.robotic_events_test.MainActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".LotteryResultActivity"
+            android:exported="false" />
+
+
         <!-- NEW: Event details screen opened on row click -->
         <activity
             android:name="com.example.robotic_events_test.EventDetailActivity"

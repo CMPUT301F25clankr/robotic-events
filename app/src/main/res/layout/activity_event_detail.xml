@@ -30,6 +30,22 @@
                 app:titleTextColor="@android:color/white"
                 app:navigationIcon="@drawable/ic_back" />
 
+            <Button
+                android:id="@+id/viewLotteryResultsButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="View Lottery Results"
+                android:visibility="gone" />
+
+
+
+            <Button
+                android:id="@+id/runLotteryButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Run Lottery"
+                android:visibility="gone" />
+
 
             <ImageView
                 android:id="@+id/detailImage"
