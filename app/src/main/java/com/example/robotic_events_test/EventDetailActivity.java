@@ -1,11 +1,16 @@
 package com.example.robotic_events_test;
 
 import android.annotation.SuppressLint;
+import android.app.Dialog;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -14,6 +19,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.WriterException;
+import com.journeyapps.barcodescanner.BarcodeEncoder;
+
+import java.util.Objects;
 
 /**
  * VIEW: Displays event details and handles user interactions
@@ -84,6 +94,7 @@ public class EventDetailActivity extends AppCompatActivity {
         joinLeaveWaitlistButton = findViewById(R.id.joinLeaveWaitlistButton);
 
         FloatingActionButton fabEditEvent = findViewById(R.id.fab_edit_event);
+        FloatingActionButton fabGenQr = findViewById(R.id.gen_qr_code);
         runLotteryButton = findViewById(R.id.runLotteryButton);
         Button viewLotteryResultsButton = findViewById(R.id.viewLotteryResultsButton);
 
@@ -92,6 +103,28 @@ public class EventDetailActivity extends AppCompatActivity {
             fabEditEvent.setVisibility(View.VISIBLE);
             fabEditEvent.setOnClickListener(v -> {
                 Toast.makeText(this, "Edit event (not implemented yet)", Toast.LENGTH_SHORT).show();
+            });
+
+            fabGenQr.setVisibility(View.VISIBLE);
+            fabGenQr.setOnClickListener(v -> {
+                // Generate QR Code stuff
+                // Create dialog
+                Dialog dialog = new Dialog(this);
+                dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+                dialog.setContentView(R.layout.gen_qr_code_dialog);
+                Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawable(new ColorDrawable(Color.parseColor("#80000000")));
+
+                if (!event.getId().isEmpty() && event.getId() != null) {
+                    Bitmap qr = generateQRCode(event.getId());
+                    ImageView qrView = dialog.findViewById(R.id.qr_code_dialog_img);
+                    if (qr != null) {
+                        Toast.makeText(this, "Showing QR code", Toast.LENGTH_SHORT).show();
+                        qrView.setImageBitmap(qr);
+                    }
+                }
+
+                // Show dialog
+                dialog.show();
             });
 
             runLotteryButton.setVisibility(View.VISIBLE);
@@ -249,4 +282,22 @@ public class EventDetailActivity extends AppCompatActivity {
                     Log.e("EventDetail", "Error refreshing waitlist count", e);
                 });
     }
+
+    private Bitmap generateQRCode(String text)
+    {
+        BarcodeEncoder barcodeEncoder
+                = new BarcodeEncoder();
+        try {
+
+            // This method returns a Bitmap image of the
+            // encoded text with a height and width of 400
+            // pixels.
+            return barcodeEncoder.encodeBitmap(text, BarcodeFormat.QR_CODE, 400, 400);
+        }
+        catch (WriterException e) {
+            Log.e("EventDetail", "Failed");
+        }
+        return null;
+    }
 }
+
