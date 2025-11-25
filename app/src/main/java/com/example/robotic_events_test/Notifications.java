@@ -1,43 +1,83 @@
 package com.example.robotic_events_test;
 
-import java.sql.Timestamp;
-import java.util.Date;
+import com.google.firebase.firestore.Exclude;
 
 public class Notifications {
+    private String id;
     private Boolean respondable;
     private String message;
     private String senderId;
-    private String recieverId;
-
+    private String receiverId;
     private long timestamp;
+    private String eventId;
 
+    public Notifications() {
+        // Required for Firestore
+    }
 
-
-    public Notifications(Boolean repsondable,String message, String senderId, String recieverId, long timestamp){
+    public Notifications(Boolean respondable, String message, String senderId, String receiverId, long timestamp, String eventId) {
         this.respondable = respondable;
         this.message = message;
         this.senderId = senderId;
-        this.recieverId = recieverId;
+        this.receiverId = receiverId;
         this.timestamp = timestamp;
+        this.eventId = eventId;
+    }
+
+    @Exclude
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public Boolean getRespondable() {
+        return respondable;
+    }
+
+    public void setRespondable(Boolean respondable) {
+        this.respondable = respondable;
     }
 
     public String getMessage() {
         return message;
     }
 
-    public String getSenderId(){
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public String getSenderId() {
         return senderId;
     }
 
-    public String getRecieverId(){
-        return recieverId;
+    public void setSenderId(String senderId) {
+        this.senderId = senderId;
     }
 
-    public long getTimestamp(){
+    public String getReceiverId() {
+        return receiverId;
+    }
+
+    public void setReceiverId(String receiverId) {
+        this.receiverId = receiverId;
+    }
+
+    public long getTimestamp() {
         return timestamp;
     }
 
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
 
+    public String getEventId() {
+        return eventId;
+    }
 
-
+    public void setEventId(String eventId) {
+        this.eventId = eventId;
+    }
 }

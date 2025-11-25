@@ -45,6 +45,9 @@
         <activity
             android:name=".EventEditActivity"
             android:exported="false" />
+        <activity
+            android:name=".NotificationsActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

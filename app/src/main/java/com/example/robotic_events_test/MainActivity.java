@@ -19,7 +19,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 
 import java.util.ArrayList;
 
@@ -31,7 +33,8 @@ public class MainActivity extends AppCompatActivity {
     private FloatingActionButton fabAddEvent;
     private FirebaseAuth auth;
     private FirebaseFirestore db;
-    private LinearLayout rootLayout;  // Changed from ConstraintLayout to LinearLayout
+    private LinearLayout rootLayout;
+    private ListenerRegistration eventListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
         rootLayout = findViewById(R.id.rootLayout);
         fabAddEvent = findViewById(R.id.fab_add_event);
         ImageButton profileButton = findViewById(R.id.profileButton);
+        ImageButton notificationButton = findViewById(R.id.notificationButton); // Notification Button
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         Button myEventsButton = findViewById(R.id.my_events_button);
         ImageButton qrButton = findViewById(R.id.qr_button);
@@ -81,6 +85,9 @@ public class MainActivity extends AppCompatActivity {
 
         profileButton.setOnClickListener(v -> startActivity(new Intent(this, ProfileActivity.class)));
 
+        // Set click listener for the notification button
+        notificationButton.setOnClickListener(v -> startActivity(new Intent(this, NotificationsActivity.class)));
+
         qrButton.setOnClickListener(v -> startActivity(new Intent(this, QRScanRedirect.class)));
 
         RecyclerView recyclerView = findViewById(R.id.events_container);
@@ -106,16 +113,32 @@ public class MainActivity extends AppCompatActivity {
         loadEventsFromFirestore();
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (eventListener != null) {
+            eventListener.remove();
+        }
+    }
 
     private void loadEventsFromFirestore() {
         EventModel eventModel = new EventModel();
-        eventModel.getAllEvents().addOnSuccessListener(eventList -> {
-            events.clear();
-            events.addAll(eventList);
-            adapter.notifyDataSetChanged();
-        }).addOnFailureListener(e -> {
-            Toast.makeText(this, "Failed to load events.", Toast.LENGTH_SHORT).show();
-            Log.e("MainActivity", "Fetch events error", e);
+        
+        // Use real-time listener instead of one-time get
+        eventListener = eventModel.addEventsListener((value, error) -> {
+            if (error != null) {
+                Log.e("MainActivity", "Listen failed.", error);
+                Toast.makeText(this, "Error loading events", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            if (value != null) {
+                events.clear();
+                for (com.google.firebase.firestore.DocumentSnapshot doc : value.getDocuments()) {
+                    events.add(doc.toObject(Event.class));
+                }
+                adapter.notifyDataSetChanged();
+            }
         });
     }
 
