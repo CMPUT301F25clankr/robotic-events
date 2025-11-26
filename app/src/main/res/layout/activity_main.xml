@@ -15,14 +15,51 @@
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize" />
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            app:title="@string/app_name"
+            app:titleTextColor="@android:color/white"
+            app:contentInsetStartWithNavigation="0dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="end"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageButton
+                    android:id="@+id/notificationButton"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_notifications"
+                    android:layout_marginEnd="4dp"
+                    android:padding="10dp"
+                    app:tint="@android:color/white"
+                    android:scaleType="fitCenter"
+                    android:contentDescription="Notifications"/>
+
+                <ImageButton
+                    android:id="@+id/profileButton"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/ic_placeholder"
+                    android:src="@drawable/ic_profile"
+                    android:layout_marginEnd="12dp"
+                    android:clipToOutline="true"
+                    android:scaleType="centerInside"
+                    android:contentDescription="Profile"/>
+            </LinearLayout>
+
+        </com.google.android.material.appbar.MaterialToolbar>
 
     </com.google.android.material.appbar.AppBarLayout>
 
     <include layout="@layout/content_main" />
 
     <!-- Floating action button to add events -->
-
+    <!-- Changed android:backgroundTint to app:backgroundTint to allow programmatic updates -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_add_event"
         android:layout_width="wrap_content"
@@ -30,13 +67,11 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:contentDescription="Add Event"
-        android:backgroundTint="#6750A4"
+        app:backgroundTint="#6750A4"
         android:src="@android:drawable/ic_input_add"
         app:tint="@android:color/white"
         android:visibility="gone"
         tools:visibility="visible"
         />
-
-
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
