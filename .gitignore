@@ -3,3 +3,9 @@
 local.properties
 *.hprof
 local.properties
+app/.gradle/config.properties
+app/build.gradle.kts
+app/build.gradle.kts
+local.properties
+local.properties
+app/build.gradle.kts
