@@ -17,6 +17,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class NotificationsActivity extends AppCompatActivity {
 
@@ -55,42 +56,18 @@ public class NotificationsActivity extends AppCompatActivity {
     }
 
     private void loadNotifications() {
+        // We remove the orderBy clause to avoid needing a composite index in Firestore.
+        // We will sort the results client-side instead.
         db.collection("notifications")
                 .whereEqualTo("receiverId", currentUserId)
-                .orderBy("timestamp", Query.Direction.DESCENDING)
                 .addSnapshotListener((value, error) -> {
                     if (error != null) {
                         Log.e("NotificationsActivity", "Listen failed.", error);
+                        Toast.makeText(this, "Error loading notifications: " + error.getMessage(), Toast.LENGTH_SHORT).show();
                         return;
                     }
 
                     if (value != null) {
-                        // Handle document changes for smoother updates
-                        for (DocumentChange dc : value.getDocumentChanges()) {
-                            Notifications notification = dc.getDocument().toObject(Notifications.class);
-                            notification.setId(dc.getDocument().getId());
-                            
-                            switch (dc.getType()) {
-                                case ADDED:
-                                    // If we are just loading initial data, we might want to just addAll.
-                                    // But since we are using SnapshotListener, this will fire for initial load too.
-                                    // To avoid duplication if we clear list, we can just maintain the list.
-                                    // However, 'orderBy' ensures order.
-                                    // Simplest strategy for RecyclerView with small lists is to clear and addAll,
-                                    // but for better performance/animation:
-                                    // For simplicity in this context, we'll reload the list or handle additions.
-                                    // Let's stick to the clear and add all strategy as implemented before, but slightly optimized?
-                                    // Actually, the previous implementation cleared the list every time. That works but flashes.
-                                    // Let's keep the simple implementation for now as it ensures consistency.
-                                    break;
-                                case MODIFIED:
-                                    break;
-                                case REMOVED:
-                                    break;
-                            }
-                        }
-                        
-                        // Refill list
                         notificationsList.clear();
                         for (DocumentSnapshot doc : value.getDocuments()) {
                             Notifications notification = doc.toObject(Notifications.class);
@@ -99,6 +76,10 @@ public class NotificationsActivity extends AppCompatActivity {
                                 notificationsList.add(notification);
                             }
                         }
+                        
+                        // Client-side sort: Newest first
+                        Collections.sort(notificationsList, (n1, n2) -> Long.compare(n2.getTimestamp(), n1.getTimestamp()));
+                        
                         adapter.notifyDataSetChanged();
                     }
                 });
