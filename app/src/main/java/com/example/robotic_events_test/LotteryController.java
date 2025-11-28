@@ -1,5 +1,7 @@
 package com.example.robotic_events_test;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -65,8 +67,6 @@ public class LotteryController {
                                 }
 
                                 int capacity = event.getTotalCapacity();
-                                // You might also track already accepted attendees; for now assume
-                                // everyone on waitlist is competing for all capacity.
 
                                 List<String> allUserIds = new ArrayList<>();
                                 for (WaitlistEntry e : entries) {
@@ -140,89 +140,41 @@ public class LotteryController {
         return runLottery(eventId, currentUserId);
     }
 
-    /**
-     * Handle logic when a user declines a spot.
-     * 1. Remove user from selected list (conceptually, waitlist entry removed by WaitlistController)
-     * 2. Find a replacement from the pool of non-selected users.
-     *
-     * @param eventId  The event ID
-     * @param declinedUserId The ID of the user who declined
-     * @return Task<Boolean> indicating success/failure of finding replacement
-     */
     public Task<Boolean> processDecline(String eventId, String declinedUserId) {
         if (eventId == null || declinedUserId == null) {
             return Tasks.forResult(false);
         }
 
-        // 1. Get the event to get capacity and organizer ID (for notification sender)
         return eventModel.getEvent(eventId).continueWithTask(eventTask -> {
             Event event = eventTask.getResult();
-            if (event == null) return Tasks.forResult(false);
+            if (event == null) {
+                return Tasks.forResult(false);
+            }
 
-            String organizerId = event.getOrganizerId();
-
-            // 2. Get current waitlist (user declining should have been removed already or will be)
-            // We need to find someone who is NOT selected yet.
-            // For simplicity, let's just look at all waitlist entries.
-            // The declined user is supposedly removed from waitlist before this call.
-            
             return waitlistModel.getWaitlistEntriesByEvent(eventId).continueWithTask(waitlistTask -> {
                 List<WaitlistEntry> entries = waitlistTask.getResult();
-                if (entries == null || entries.isEmpty()) {
-                    Log.d(TAG, "No users left in waitlist to replace declined user.");
-                    return Tasks.forResult(true); // Nothing to do, but not an error
+                if (entries == null) {
+                    return Tasks.forResult(false);
                 }
 
-                // In a real app, we need to know who was ALREADY selected to not select them again.
-                // We can fetch the latest LotteryResult.
-                return lotteryModel.getLatestLotteriesForEvent(eventId).continueWithTask(lotteryTask -> {
-                    List<LotteryResult> lotteries = lotteryTask.getResult();
-                    List<String> alreadySelectedIds = new ArrayList<>();
-                    
-                    if (lotteries != null && !lotteries.isEmpty()) {
-                        LotteryResult lastResult = lotteries.get(0);
-                        if (lastResult.getSelectedUserIds() != null) {
-                            alreadySelectedIds.addAll(lastResult.getSelectedUserIds());
-                        }
-                    }
-                    
-                    // Filter entries to find candidates (those NOT in alreadySelectedIds)
-                    List<String> candidates = new ArrayList<>();
-                    for (WaitlistEntry entry : entries) {
-                        if (!alreadySelectedIds.contains(entry.getUserId())) {
-                            candidates.add(entry.getUserId());
-                        }
-                    }
-
-                    if (candidates.isEmpty()) {
-                         Log.d(TAG, "No candidates available to fill the spot.");
-                         return Tasks.forResult(true);
-                    }
-
-                    // 3. Pick one random candidate
-                    Collections.shuffle(candidates);
-                    String luckyWinnerId = candidates.get(0);
-
-                    // 4. Notify the winner
+                List<Task<Void>> notificationTasks = new ArrayList<>();
+                for (WaitlistEntry entry : entries) {
                     Notifications notification = new Notifications(
-                            true,
-                            "You have been selected from the waitlist for: " + event.getTitle(),
-                            organizerId, // Sent by organizer (system behalf)
-                            luckyWinnerId,
-                            System.currentTimeMillis(),
-                            eventId
+                        false,
+                        "A spot has opened up for \"" + event.getTitle() + "\". You've been re-entered into the lottery.",
+                        event.getOrganizerId(),
+                        entry.getUserId(),
+                        System.currentTimeMillis(),
+                        eventId
                     );
-                    
-                    return db.collection("notifications").add(notification).continueWith(nTask -> {
-                         if (nTask.isSuccessful()) {
-                             Log.d(TAG, "Replacement found and notified: " + luckyWinnerId);
-                             
-                             // OPTIONAL: Update LotteryResult to include this new person? 
-                             // For now, we just notify them.
-                             return true;
-                         }
-                         return false;
-                    });
+                    notificationTasks.add(db.collection("notifications").add(notification).continueWith(task -> null));
+                }
+
+                return Tasks.whenAll(notificationTasks).continueWithTask(task -> {
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                        runLottery(eventId, event.getOrganizerId());
+                    }, 10000);
+                    return Tasks.forResult(true);
                 });
             });
         });

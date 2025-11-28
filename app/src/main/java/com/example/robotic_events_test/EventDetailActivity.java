@@ -231,17 +231,17 @@ public class EventDetailActivity extends AppCompatActivity {
             }
             String userId = auth.getCurrentUser().getUid();
             waitlistController.joinWaitlist(event.getId(), userId, lat, lon)
-                .addOnSuccessListener(success -> {
-                    if (success) {
-                        isInWaitlist = true;
-                        updateButtonText();
-                        refreshWaitlistCount();
-                        Toast.makeText(EventDetailActivity.this, "Added to waitlist!", Toast.LENGTH_SHORT).show();
-                    } else {
-                        Toast.makeText(EventDetailActivity.this, "Failed to join waitlist", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .addOnFailureListener(e -> Toast.makeText(EventDetailActivity.this, "Error joining waitlist", Toast.LENGTH_SHORT).show());
+                    .addOnSuccessListener(success -> {
+                        if (success) {
+                            isInWaitlist = true;
+                            updateButtonText();
+                            refreshWaitlistCount();
+                            Toast.makeText(EventDetailActivity.this, "Added to waitlist!", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(EventDetailActivity.this, "Failed to join waitlist", Toast.LENGTH_SHORT).show();
+                        }
+                    })
+                    .addOnFailureListener(e -> Toast.makeText(EventDetailActivity.this, "Error joining waitlist", Toast.LENGTH_SHORT).show());
         });
     }
 
@@ -262,10 +262,10 @@ public class EventDetailActivity extends AppCompatActivity {
     private void updateButtonText() {
         if (isInWaitlist) {
             joinLeaveWaitlistButton.setText("Leave Waitlist");
-            joinLeaveWaitlistButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(getColor(android.R.color.holo_red_dark)));
+            joinLeaveWaitlistButton.setBackgroundColor(Color.RED);
         } else {
             joinLeaveWaitlistButton.setText("Join Waitlist");
-            joinLeaveWaitlistButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#008000")));
+            joinLeaveWaitlistButton.setBackgroundColor(Color.GREEN);
         }
     }
 
@@ -284,11 +284,4 @@ public class EventDetailActivity extends AppCompatActivity {
         }
         return null;
     }
-<<<<<<< Updated upstream
 }
-<<<<<<< Updated upstream
-=======
-}
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
