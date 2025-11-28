@@ -270,7 +270,13 @@ public class EventDetailActivity extends AppCompatActivity {
     }
 
     private void updateButtonText() {
-        joinLeaveWaitlistButton.setText(isInWaitlist ? "Leave Waitlist" : "Join Waitlist");
+        if (isInWaitlist) {
+            joinLeaveWaitlistButton.setText("Leave Waitlist");
+            joinLeaveWaitlistButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(getColor(android.R.color.holo_red_dark)));
+        } else {
+            joinLeaveWaitlistButton.setText("Join Waitlist");
+            joinLeaveWaitlistButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#008000")));
+        }
     }
 
     private void refreshWaitlistCount() {
@@ -300,4 +306,3 @@ public class EventDetailActivity extends AppCompatActivity {
         return null;
     }
 }
-
