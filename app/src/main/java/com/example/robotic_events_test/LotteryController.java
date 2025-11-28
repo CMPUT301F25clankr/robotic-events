@@ -129,6 +129,10 @@ public class LotteryController {
                                                 db.collection("notifications").add(notification);
                                             }
 
+                                            // Close the event registration
+                                            event.setStatus("closed");
+                                            eventModel.saveEvent(event);
+
                                             Log.d(TAG, "Lottery completed for event: " + eventId);
                                             return true;
                                         });
@@ -144,6 +148,7 @@ public class LotteryController {
      * Handle logic when a user declines a spot.
      * 1. Remove user from selected list (conceptually, waitlist entry removed by WaitlistController)
      * 2. Find a replacement from the pool of non-selected users.
+     * 3. Update LotteryResult to track the declined user.
      *
      * @param eventId  The event ID
      * @param declinedUserId The ID of the user who declined
@@ -162,67 +167,99 @@ public class LotteryController {
             String organizerId = event.getOrganizerId();
 
             // 2. Get current waitlist (user declining should have been removed already or will be)
-            // We need to find someone who is NOT selected yet.
-            // For simplicity, let's just look at all waitlist entries.
-            // The declined user is supposedly removed from waitlist before this call.
             
             return waitlistModel.getWaitlistEntriesByEvent(eventId).continueWithTask(waitlistTask -> {
                 List<WaitlistEntry> entries = waitlistTask.getResult();
-                if (entries == null || entries.isEmpty()) {
-                    Log.d(TAG, "No users left in waitlist to replace declined user.");
-                    return Tasks.forResult(true); // Nothing to do, but not an error
-                }
-
-                // In a real app, we need to know who was ALREADY selected to not select them again.
-                // We can fetch the latest LotteryResult.
+                // entries might be empty if declined user was the last one and removed, but we need to find replacement.
+                // If entries is empty, we can't find replacement.
+                // Note: declined user is removed from waitlist BEFORE this is called in NotificationsAdapter.
+                
+                // 3. Fetch and UPDATE the LotteryResult
                 return lotteryModel.getLatestLotteriesForEvent(eventId).continueWithTask(lotteryTask -> {
                     List<LotteryResult> lotteries = lotteryTask.getResult();
-                    List<String> alreadySelectedIds = new ArrayList<>();
-                    
-                    if (lotteries != null && !lotteries.isEmpty()) {
-                        LotteryResult lastResult = lotteries.get(0);
-                        if (lastResult.getSelectedUserIds() != null) {
-                            alreadySelectedIds.addAll(lastResult.getSelectedUserIds());
-                        }
+                    if (lotteries == null || lotteries.isEmpty()) {
+                         Log.e(TAG, "No lottery result found to update.");
+                         return Tasks.forResult(false);
                     }
                     
-                    // Filter entries to find candidates (those NOT in alreadySelectedIds)
+                    LotteryResult lastResult = lotteries.get(0);
+                    List<String> selectedIds = lastResult.getSelectedUserIds();
+                    List<String> declinedIds = lastResult.getDeclinedUserIds();
+                    if (declinedIds == null) declinedIds = new ArrayList<>();
+                    
+                    // Move user to declined
+                    if (selectedIds != null && selectedIds.contains(declinedUserId)) {
+                        selectedIds.remove(declinedUserId);
+                    }
+                    if (!declinedIds.contains(declinedUserId)) {
+                        declinedIds.add(declinedUserId);
+                    }
+                    
+                    lastResult.setSelectedUserIds(selectedIds);
+                    lastResult.setDeclinedUserIds(declinedIds);
+                    
+                    // Find replacement from waitlist entries who are NOT selected and NOT declined
+                    // We need to track who is already selected/declined to avoid re-picking them.
+                    // Waitlist entries contains EVERYONE currently in waitlist DB.
+                    // If declined user was removed from DB, they are not in `entries`.
+                    
                     List<String> candidates = new ArrayList<>();
-                    for (WaitlistEntry entry : entries) {
-                        if (!alreadySelectedIds.contains(entry.getUserId())) {
-                            candidates.add(entry.getUserId());
+                    List<String> finalSelectedIds = selectedIds != null ? selectedIds : new ArrayList<>();
+                    List<String> finalDeclinedIds = declinedIds;
+
+                    if (entries != null) {
+                        for (WaitlistEntry entry : entries) {
+                            String uid = entry.getUserId();
+                            // Candidate if NOT selected AND NOT declined
+                            if (!finalSelectedIds.contains(uid) && !finalDeclinedIds.contains(uid)) {
+                                candidates.add(uid);
+                            }
                         }
                     }
 
-                    if (candidates.isEmpty()) {
+                    boolean replacementFound = false;
+                    String luckyWinnerId = null;
+
+                    if (!candidates.isEmpty()) {
+                        // Pick one random candidate
+                        Collections.shuffle(candidates);
+                        luckyWinnerId = candidates.get(0);
+                        
+                        // Add to selected
+                        finalSelectedIds.add(luckyWinnerId);
+                        lastResult.setSelectedUserIds(finalSelectedIds);
+                        replacementFound = true;
+                    } else {
                          Log.d(TAG, "No candidates available to fill the spot.");
-                         return Tasks.forResult(true);
+                    }
+                    
+                    // SAVE updated LotteryResult
+                    // We need to use .set() or overwrite, but saveLotteryResult uses .add().
+                    // We should update the existing document.
+                    // Ideally LotteryModel should have update method.
+                    // For now, we can just overwrite using db.collection.document(id).set(...)
+                    // or modify LotteryModel.
+                    
+                    String docId = lastResult.getId();
+                    if (docId != null) {
+                        db.collection("lotteries").document(docId).set(lastResult);
                     }
 
-                    // 3. Pick one random candidate
-                    Collections.shuffle(candidates);
-                    String luckyWinnerId = candidates.get(0);
-
-                    // 4. Notify the winner
-                    Notifications notification = new Notifications(
-                            true,
-                            "You have been selected from the waitlist for: " + event.getTitle(),
-                            organizerId, // Sent by organizer (system behalf)
-                            luckyWinnerId,
-                            System.currentTimeMillis(),
-                            eventId
-                    );
+                    // 4. Notify the winner if found
+                    if (replacementFound && luckyWinnerId != null) {
+                        Notifications notification = new Notifications(
+                                true,
+                                "You have been selected from the waitlist for: " + event.getTitle(),
+                                organizerId, 
+                                luckyWinnerId,
+                                System.currentTimeMillis(),
+                                eventId
+                        );
+                        
+                        return db.collection("notifications").add(notification).continueWith(nTask -> true);
+                    }
                     
-                    return db.collection("notifications").add(notification).continueWith(nTask -> {
-                         if (nTask.isSuccessful()) {
-                             Log.d(TAG, "Replacement found and notified: " + luckyWinnerId);
-                             
-                             // OPTIONAL: Update LotteryResult to include this new person? 
-                             // For now, we just notify them.
-                             return true;
-                         }
-                         return false;
-                    });
+                    return Tasks.forResult(replacementFound);
                 });
             });
         });

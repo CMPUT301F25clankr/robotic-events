@@ -40,28 +40,37 @@ public class WaitlistController {
             return Tasks.forResult(false);
         }
 
-        // Check if already in waitlist
-        return waitlistModel.waitlistEntryExists(eventId, userId)
-                .continueWithTask(task -> {
-                    if (task.isSuccessful() && task.getResult()) {
-                        Log.d(TAG, "User already in waitlist");
-                        return Tasks.forResult(false);
-                    }
+        // Check if event is open before joining
+        return eventModel.getEvent(eventId).continueWithTask(eventTask -> {
+            Event event = eventTask.getResult();
+            if (event != null && "closed".equals(event.getStatus())) {
+                Log.d(TAG, "Cannot join waitlist: Event is closed.");
+                return Tasks.forResult(false);
+            }
 
-                    // Create new entry with geolocation
-                    WaitlistEntry entry = new WaitlistEntry(eventId, userId, latitude, longitude, locationName);
-                    return waitlistModel.addWaitlistEntry(entry)
-                            .continueWithTask(addTask -> {
-                                if (addTask.isSuccessful()) {
-                                    Log.d(TAG, "Successfully joined waitlist with location: " + locationName);
-                                    checkAndSendMilestoneNotifications(eventId);
-                                    return Tasks.forResult(true);
-                                } else {
-                                    Log.e(TAG, "Failed to join waitlist", addTask.getException());
-                                    return Tasks.forResult(false);
-                                }
-                            });
-                });
+            // Check if already in waitlist
+            return waitlistModel.waitlistEntryExists(eventId, userId)
+                    .continueWithTask(task -> {
+                        if (task.isSuccessful() && task.getResult()) {
+                            Log.d(TAG, "User already in waitlist");
+                            return Tasks.forResult(false);
+                        }
+
+                        // Create new entry with geolocation
+                        WaitlistEntry entry = new WaitlistEntry(eventId, userId, latitude, longitude, locationName);
+                        return waitlistModel.addWaitlistEntry(entry)
+                                .continueWithTask(addTask -> {
+                                    if (addTask.isSuccessful()) {
+                                        Log.d(TAG, "Successfully joined waitlist with location: " + locationName);
+                                        checkAndSendMilestoneNotifications(eventId);
+                                        return Tasks.forResult(true);
+                                    } else {
+                                        Log.e(TAG, "Failed to join waitlist", addTask.getException());
+                                        return Tasks.forResult(false);
+                                    }
+                                });
+                    });
+        });
     }
 
     /**
@@ -80,28 +89,37 @@ public class WaitlistController {
             return Tasks.forResult(false);
         }
 
-        // Check if already in waitlist
-        return waitlistModel.waitlistEntryExists(eventId, userId)
-                .continueWithTask(task -> {
-                    if (task.isSuccessful() && task.getResult()) {
-                        Log.d(TAG, "User already in waitlist");
-                        return Tasks.forResult(false);
-                    }
+        // Check if event is open before joining
+        return eventModel.getEvent(eventId).continueWithTask(eventTask -> {
+            Event event = eventTask.getResult();
+            if (event != null && "closed".equals(event.getStatus())) {
+                Log.d(TAG, "Cannot join waitlist: Event is closed.");
+                return Tasks.forResult(false);
+            }
 
-                    // Create new entry without geolocation
-                    WaitlistEntry entry = new WaitlistEntry(eventId, userId);
-                    return waitlistModel.addWaitlistEntry(entry)
-                            .continueWithTask(addTask -> {
-                                if (addTask.isSuccessful()) {
-                                    Log.d(TAG, "Successfully joined waitlist");
-                                    checkAndSendMilestoneNotifications(eventId);
-                                    return Tasks.forResult(true);
-                                } else {
-                                    Log.e(TAG, "Failed to join waitlist", addTask.getException());
-                                    return Tasks.forResult(false);
-                                }
-                            });
-                });
+            // Check if already in waitlist
+            return waitlistModel.waitlistEntryExists(eventId, userId)
+                    .continueWithTask(task -> {
+                        if (task.isSuccessful() && task.getResult()) {
+                            Log.d(TAG, "User already in waitlist");
+                            return Tasks.forResult(false);
+                        }
+
+                        // Create new entry without geolocation
+                        WaitlistEntry entry = new WaitlistEntry(eventId, userId);
+                        return waitlistModel.addWaitlistEntry(entry)
+                                .continueWithTask(addTask -> {
+                                    if (addTask.isSuccessful()) {
+                                        Log.d(TAG, "Successfully joined waitlist");
+                                        checkAndSendMilestoneNotifications(eventId);
+                                        return Tasks.forResult(true);
+                                    } else {
+                                        Log.e(TAG, "Failed to join waitlist", addTask.getException());
+                                        return Tasks.forResult(false);
+                                    }
+                                });
+                    });
+        });
     }
 
     private void checkAndSendMilestoneNotifications(String eventId) {
