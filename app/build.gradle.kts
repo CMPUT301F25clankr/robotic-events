@@ -61,6 +61,7 @@ dependencies {
     implementation("androidx.navigation:navigation-fragment-ktx:2.8.4")
     implementation("androidx.navigation:navigation-ui-ktx:2.8.4")
     implementation(libs.activity)
+    implementation(libs.play.services.location)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

@@ -18,7 +18,7 @@ public class SignupActivity extends AppCompatActivity {
     private FirebaseAuth auth;
     private FirebaseFirestore db;
 
-    private EditText nameInput, emailInput, passwordInput, confirmPasswordInput;
+    private EditText nameInput, emailInput, passwordInput, confirmPasswordInput, locationInput;
     private RadioButton organizerRadio;
     private Button signupButton, backToLoginButton;
 
@@ -34,6 +34,7 @@ public class SignupActivity extends AppCompatActivity {
         emailInput = findViewById(R.id.signupEmailInput);
         passwordInput = findViewById(R.id.signupPasswordInput);
         confirmPasswordInput = findViewById(R.id.confirmPasswordInput);
+        locationInput = findViewById(R.id.locationInput);
         organizerRadio = findViewById(R.id.organizerRadio);
 
         signupButton = findViewById(R.id.signupConfirmButton);
@@ -51,9 +52,10 @@ public class SignupActivity extends AppCompatActivity {
         String email = emailInput.getText().toString().trim();
         String password = passwordInput.getText().toString().trim();
         String confirm = confirmPasswordInput.getText().toString().trim();
+        String location = locationInput.getText().toString().trim();
         boolean isOrganizer = organizerRadio.isChecked();
 
-        if (name.isEmpty() || email.isEmpty() || password.isEmpty() || confirm.isEmpty()) {
+        if (name.isEmpty() || email.isEmpty() || password.isEmpty() || confirm.isEmpty() || location.isEmpty()) {
             Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -69,6 +71,7 @@ public class SignupActivity extends AppCompatActivity {
 
                     User user = new User(uid, name, email);
                     user.setOrganizer(isOrganizer);
+                    user.setLocation(location);
 
                     db.collection("users").document(uid).set(user)
                             .addOnSuccessListener(unused -> {

@@ -1,6 +1,6 @@
-// src/main/java/com/example/robotic_events_test/EventCreationActivity.java
 package com.example.robotic_events_test;
 
+import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
@@ -22,7 +22,7 @@ import java.util.Objects;
 
 public class EventCreationActivity extends AppCompatActivity {
 
-    private EditText eventTitleSetter, eventCapacitySetter;
+    private EditText eventTitleSetter, eventCapacitySetter, eventLocationSetter;
     private DatePicker eventDatePicker;
     private TimePicker eventTimePicker;
     private EventModel eventModel;
@@ -39,25 +39,17 @@ public class EventCreationActivity extends AppCompatActivity {
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setTitle("Create an Event");
 
-
-        /*
-        eventTimePicker
-        eventDatePicker
-        eventCapacitySetter
-        eventNameSetter
-         */
         eventTitleSetter = findViewById(R.id.eventTitleSetter);
+        eventLocationSetter = findViewById(R.id.eventLocationSetter);
         eventCapacitySetter = findViewById(R.id.eventCapacitySetter);
         eventDatePicker = findViewById(R.id.eventDatePicker);
         eventTimePicker = findViewById(R.id.eventTimePicker);
-        // button to send form data to this activity
         Button eventCreationConfirm = findViewById(R.id.eventCreationConfirm);
 
         eventCreationConfirm.setOnClickListener(v -> createEvent());
     }
 
     private void createEvent() {
-        // to get organizer ID
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
             Toast.makeText(this, "You must be logged in to create an event.", Toast.LENGTH_SHORT).show();
@@ -66,15 +58,31 @@ public class EventCreationActivity extends AppCompatActivity {
         String organizerId = currentUser.getUid();
 
         String eventTitle = eventTitleSetter.getText().toString().trim();
+        String eventLocation = eventLocationSetter.getText().toString().trim();
         String eventCapacityStr = eventCapacitySetter.getText().toString().trim();
 
-        if (eventTitle.isEmpty() || eventCapacityStr.isEmpty()) {
+        if (eventTitle.isEmpty() || eventCapacityStr.isEmpty() || eventLocation.isEmpty()) {
             Toast.makeText(this, "Please fill all fields.", Toast.LENGTH_SHORT).show();
             return;
         }
 
         int eventCapacity = Integer.parseInt(eventCapacityStr);
 
+        NominatimHelper.getCoordinatesFromAddress(eventLocation, new NominatimHelper.NominatimCallback() {
+            @Override
+            public void onCoordinatesResolved(Location location) {
+                saveEvent(eventTitle, eventLocation, eventCapacity, organizerId, location.getLatitude(), location.getLongitude());
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                Toast.makeText(EventCreationActivity.this, "Could not find coordinates for the event location.", Toast.LENGTH_SHORT).show();
+                saveEvent(eventTitle, eventLocation, eventCapacity, organizerId, 0.0, 0.0);
+            }
+        });
+    }
+
+    private void saveEvent(String eventTitle, String eventLocation, int eventCapacity, String organizerId, double latitude, double longitude) {
         Calendar calendar = Calendar.getInstance();
         calendar.set(
                 eventDatePicker.getYear(),
@@ -87,14 +95,16 @@ public class EventCreationActivity extends AppCompatActivity {
 
         eventModel.saveEvent(new Event(
                 eventTitle,
-                "Default Location",
+                eventLocation,
                 dateTime,
                 eventCapacity,
                 0.0,
                 "Default Description",
                 "General",
                 organizerId,
-                null
+                null,
+                latitude,
+                longitude
         ));
 
         Toast.makeText(this, "Event created successfully!", Toast.LENGTH_SHORT).show();
@@ -103,7 +113,6 @@ public class EventCreationActivity extends AppCompatActivity {
         finish();
     }
 
-    // Back button
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
