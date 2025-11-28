@@ -137,6 +137,7 @@ public class MainActivity extends AppCompatActivity {
     private void loadEventsFromFirestore() {
         EventModel eventModel = new EventModel();
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 
         // Safety check: Ensure user is logged in before accessing UID
         if (auth.getCurrentUser() == null) {
@@ -150,13 +151,18 @@ public class MainActivity extends AppCompatActivity {
         
 =======
 >>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
         if (isOrganizer) {
             String currentUserId = auth.getCurrentUser().getUid();
             eventListener = eventModel.addOrganizerEventsListener(currentUserId, (value, error) -> {
                 if (error != null) {
                     Log.e("MainActivity", "Listen failed.", error);
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
                     Toast.makeText(this, "Error loading events: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
                     return;
@@ -172,7 +178,10 @@ public class MainActivity extends AppCompatActivity {
                 if (error != null) {
                     Log.e("MainActivity", "Listen failed.", error);
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
                     Toast.makeText(this, "Error loading events: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
                     return;
