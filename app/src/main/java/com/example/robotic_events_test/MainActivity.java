@@ -3,7 +3,6 @@ package com.example.robotic_events_test;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
-import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -12,8 +11,6 @@ import android.widget.ImageButton;
 import android.widget.Toast;
 import android.widget.LinearLayout;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -34,9 +31,9 @@ public class MainActivity extends AppCompatActivity {
     private boolean isOrganizer = false;
     private FloatingActionButton fabAddEvent;
     private FirebaseAuth auth;
+    private FirebaseFirestore db;
     private LinearLayout rootLayout;
     private ListenerRegistration eventListener;
-    private ActivityResultLauncher<Intent> filterLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,7 +41,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         auth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
 
+        // Require login
         if (auth.getCurrentUser() == null) {
             Intent intent = new Intent(this, LoginActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -56,33 +55,38 @@ public class MainActivity extends AppCompatActivity {
         rootLayout = findViewById(R.id.rootLayout);
         fabAddEvent = findViewById(R.id.fab_add_event);
         ImageButton profileButton = findViewById(R.id.profileButton);
-        ImageButton notificationButton = findViewById(R.id.notificationButton);
+        ImageButton notificationButton = findViewById(R.id.notificationButton); // Notification Button
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         Button myEventsButton = findViewById(R.id.my_events_button);
         ImageButton qrButton = findViewById(R.id.qr_button);
-        ImageButton filterButton = findViewById(R.id.filter_button);
 
         SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
         isOrganizer = prefs.getBoolean("isOrganizer", false);
 
+        // Apply theme colors based on role
         if (isOrganizer) {
-            rootLayout.setBackgroundColor(Color.parseColor("#E3F2FD"));
-            toolbar.setBackgroundColor(Color.parseColor("#1976D2"));
-            myEventsButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#1976D2")));
-            qrButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#1976D2")));
-            fabAddEvent.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#1976D2")));
+            // Organizer blue theme
+            rootLayout.setBackgroundColor(Color.parseColor("#E3F2FD")); // Light blue background
+            toolbar.setBackgroundColor(Color.parseColor("#1976D2")); // Blue toolbar
+            myEventsButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#1976D2"))); // Blue button
+            qrButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#1976D2"))); // Blue QR button
+            fabAddEvent.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#1976D2"))); // Blue FAB
         } else {
-            rootLayout.setBackgroundColor(Color.parseColor("#F3E5F5"));
-            toolbar.setBackgroundColor(Color.parseColor("#7B1FA2"));
-            myEventsButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#7B1FA2")));
-            qrButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#7B1FA2")));
+            // User purple theme
+            rootLayout.setBackgroundColor(Color.parseColor("#F3E5F5")); // Light purple background
+            toolbar.setBackgroundColor(Color.parseColor("#7B1FA2")); // Purple toolbar
+            myEventsButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#7B1FA2"))); // Purple button
+            qrButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#7B1FA2"))); // Purple QR button
         }
 
         fabAddEvent.setVisibility(isOrganizer ? View.VISIBLE : View.GONE);
         fabAddEvent.setOnClickListener(v -> startActivity(new Intent(this, EventCreationActivity.class)));
 
         profileButton.setOnClickListener(v -> startActivity(new Intent(this, ProfileActivity.class)));
+
+        // Set click listener for the notification button
         notificationButton.setOnClickListener(v -> startActivity(new Intent(this, NotificationsActivity.class)));
+
         qrButton.setOnClickListener(v -> startActivity(new Intent(this, QRScanRedirect.class)));
 
         RecyclerView recyclerView = findViewById(R.id.events_container);
@@ -94,33 +98,15 @@ public class MainActivity extends AppCompatActivity {
         searchBar.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                filterEvents(query, null, "any", -1, 0, 0);
+                filterEvents(query, recyclerView);
                 return false;
             }
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                filterEvents(newText, null, "any", -1, 0, 0);
+                filterEvents(newText, recyclerView);
                 return false;
             }
-        });
-
-        filterLauncher = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                    String category = result.getData().getStringExtra("category");
-                    String price = result.getData().getStringExtra("price");
-                    float distance = result.getData().getFloatExtra("distance", -1);
-                    double latitude = result.getData().getDoubleExtra("latitude", 0);
-                    double longitude = result.getData().getDoubleExtra("longitude", 0);
-                    filterEvents(searchBar.getQuery().toString(), category, price, distance, latitude, longitude);
-                }
-            });
-
-        filterButton.setOnClickListener(v -> {
-            Intent intent = new Intent(this, FilterActivity.class);
-            filterLauncher.launch(intent);
         });
 
         loadEventsFromFirestore();
@@ -137,7 +123,6 @@ public class MainActivity extends AppCompatActivity {
     private void loadEventsFromFirestore() {
         EventModel eventModel = new EventModel();
 
-
         // Safety check: Ensure user is logged in before accessing UID
         if (auth.getCurrentUser() == null) {
             // This should theoretically not happen due to onCreate check, but safe to return
@@ -148,7 +133,6 @@ public class MainActivity extends AppCompatActivity {
         // If Organizer: Show only their own events.
         // If User: Show ALL events.
         
-
         if (isOrganizer) {
             String currentUserId = auth.getCurrentUser().getUid();
             eventListener = eventModel.addOrganizerEventsListener(currentUserId, (value, error) -> {
@@ -157,73 +141,45 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(this, "Error loading events: " + error.getMessage(), Toast.LENGTH_SHORT).show();
                     return;
                 }
+                
                 if (value != null) {
                     events.clear();
-                    value.forEach(doc -> events.add(doc.toObject(Event.class)));
+                    for (com.google.firebase.firestore.DocumentSnapshot doc : value.getDocuments()) {
+                        events.add(doc.toObject(Event.class));
+                    }
                     adapter.notifyDataSetChanged();
                 }
             });
         } else {
+            // Standard user sees all events
             eventListener = eventModel.addEventsListener((value, error) -> {
                 if (error != null) {
                     Log.e("MainActivity", "Listen failed.", error);
                     Toast.makeText(this, "Error loading events: " + error.getMessage(), Toast.LENGTH_SHORT).show();
-                  return;
+                    return;
                 }
+                
                 if (value != null) {
                     events.clear();
-                    value.forEach(doc -> events.add(doc.toObject(Event.class)));
+                    for (com.google.firebase.firestore.DocumentSnapshot doc : value.getDocuments()) {
+                        events.add(doc.toObject(Event.class));
+                    }
                     adapter.notifyDataSetChanged();
                 }
             });
         }
     }
 
-    private void filterEvents(String query, String category, String price, float distance, double latitude, double longitude) {
-        RecyclerView recyclerView = findViewById(R.id.events_container);
+    private void filterEvents(String query, RecyclerView recyclerView) {
+        if (query == null || query.trim().isEmpty()) {
+            recyclerView.setAdapter(adapter);
+            adapter.notifyDataSetChanged();
+            return;
+        }
         ArrayList<Event> filteredEvents = new ArrayList<>();
         for (Event event : events) {
-            boolean matches = true;
-
-            if (query != null && !query.trim().isEmpty()) {
-                String title = event.getTitle() != null ? event.getTitle().toLowerCase() : "";
-                String location = event.getLocation() != null ? event.getLocation().toLowerCase() : "";
-                if (!title.contains(query.toLowerCase()) && !location.contains(query.toLowerCase())) {
-                    matches = false;
-                }
-            }
-
-            if (category != null && !category.trim().isEmpty()) {
-                String eventCategory = event.getCategory() != null ? event.getCategory().toLowerCase() : "";
-                if (!eventCategory.contains(category.toLowerCase())) {
-                    matches = false;
-                }
-            }
-
-            if (price != null && !price.equals("any")) {
-                if (price.equals("free") && event.getPrice() != 0) {
-                    matches = false;
-                }
-                if (price.equals("paid") && event.getPrice() == 0) {
-                    matches = false;
-                }
-            }
-
-            if (distance != -1 && latitude != 0 && longitude != 0) {
-                Location eventLocation = new Location("");
-                eventLocation.setLatitude(event.getLatitude());
-                eventLocation.setLongitude(event.getLongitude());
-
-                Location userLocation = new Location("");
-                userLocation.setLatitude(latitude);
-                userLocation.setLongitude(longitude);
-
-                if (userLocation.distanceTo(eventLocation) / 1000 > distance) {
-                    matches = false;
-                }
-            }
-
-            if (matches) {
+            String title = event.getTitle() != null ? event.getTitle().toLowerCase() : "";
+            if (title.contains(query.toLowerCase())) {
                 filteredEvents.add(event);
             }
         }

@@ -6,11 +6,14 @@ import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * MODEL: Handles all database operations for waitlists
  * This is the data access layer - only interacts with Firestore
+ * Extended with geolocation support
  */
 public class WaitlistModel {
     private final CollectionReference waitlistCollection;
@@ -118,6 +121,33 @@ public class WaitlistModel {
                         return task.getResult().toObjects(WaitlistEntry.class);
                     }
                     return new ArrayList<>();
+                });
+    }
+
+    /**
+     * NEW: Update location information for a waitlist entry
+     * Used when user joins with geolocation enabled
+     */
+    public Task<Void> updateWaitlistEntryLocation(String eventId, String userId,
+                                                  double latitude, double longitude, String locationName) {
+        return waitlistCollection
+                .whereEqualTo("eventId", eventId)
+                .whereEqualTo("userId", userId)
+                .get()
+                .continueWithTask(task -> {
+                    if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()) {
+                        DocumentSnapshot doc = task.getResult().getDocuments().get(0);
+
+                        Map<String, Object> updates = new HashMap<>();
+                        updates.put("latitude", latitude);
+                        updates.put("longitude", longitude);
+                        updates.put("locationName", locationName);
+
+                        return doc.getReference().update(updates);
+                    } else {
+                        Log.e(TAG, "Waitlist entry not found for update");
+                        return com.google.android.gms.tasks.Tasks.forException(new Exception("Waitlist entry not found"));
+                    }
                 });
     }
 }
