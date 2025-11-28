@@ -233,6 +233,7 @@
             android:contentDescription="Edit Event"
             android:src="@android:drawable/ic_menu_edit"
             android:visibility="gone"
+            app:backgroundTint="#1976D2"
             app:tint="@android:color/white"
             tools:visibility="visible" />
 
@@ -242,9 +243,10 @@
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"
             android:layout_margin="8dp"
-            android:contentDescription="Edit Event"
+            android:contentDescription="Generate QR code"
             android:src="@drawable/ic_qr_code"
             android:visibility="gone"
+            app:backgroundTint="#1976D2"
             app:tint="@android:color/white"
             tools:visibility="visible" />
 

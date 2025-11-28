@@ -1,19 +1,28 @@
 // src/main/java/com/example/robotic_events_test/EventCreationActivity.java
 package com.example.robotic_events_test;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -22,10 +31,20 @@ import java.util.Objects;
 
 public class EventCreationActivity extends AppCompatActivity {
 
-    private EditText eventTitleSetter, eventCapacitySetter;
+    private static final int PICK_ICON_IMAGE_REQUEST = 1;
+    private static final int PICK_BANNER_IMAGE_REQUEST = 2;
+
+    private EditText eventTitleSetter, eventCapacitySetter, eventIconUrlSetter, eventBannerUrlSetter;
     private DatePicker eventDatePicker;
     private TimePicker eventTimePicker;
+    private Button eventCreationConfirm, uploadIconButton, uploadBannerButton;
+    private ProgressBar progressBar;
+
     private EventModel eventModel;
+    private StorageController storageController;
+
+    private Uri iconImageUri = null;
+    private Uri bannerImageUri = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,77 +52,149 @@ public class EventCreationActivity extends AppCompatActivity {
         setContentView(R.layout.activity_event_creation);
 
         eventModel = new EventModel();
+        storageController = new StorageController();
 
         Toolbar toolbar = findViewById(R.id.eventCreationToolbar);
         setSupportActionBar(toolbar);
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setTitle("Create an Event");
 
+        initializeViews();
 
-        /*
-        eventTimePicker
-        eventDatePicker
-        eventCapacitySetter
-        eventNameSetter
-         */
+        uploadIconButton.setOnClickListener(v -> openFileChooser(PICK_ICON_IMAGE_REQUEST));
+        uploadBannerButton.setOnClickListener(v -> openFileChooser(PICK_BANNER_IMAGE_REQUEST));
+        eventCreationConfirm.setOnClickListener(v -> createEvent());
+    }
+
+    private void initializeViews() {
         eventTitleSetter = findViewById(R.id.eventTitleSetter);
         eventCapacitySetter = findViewById(R.id.eventCapacitySetter);
         eventDatePicker = findViewById(R.id.eventDatePicker);
         eventTimePicker = findViewById(R.id.eventTimePicker);
-        // button to send form data to this activity
-        Button eventCreationConfirm = findViewById(R.id.eventCreationConfirm);
+        eventIconUrlSetter = findViewById(R.id.eventIconUrlSetter);
+        eventBannerUrlSetter = findViewById(R.id.eventBannerUrlSetter);
+        uploadIconButton = findViewById(R.id.uploadIconButton);
+        uploadBannerButton = findViewById(R.id.uploadBannerButton);
+        eventCreationConfirm = findViewById(R.id.eventCreationConfirm);
+        progressBar = findViewById(R.id.createEventProgressBar);
+    }
 
-        eventCreationConfirm.setOnClickListener(v -> createEvent());
+    private void openFileChooser(int requestCode) {
+        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        startActivityForResult(intent, requestCode);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_OK && data != null && data.getData() != null) {
+            if (requestCode == PICK_ICON_IMAGE_REQUEST) {
+                iconImageUri = data.getData();
+                eventIconUrlSetter.setText("New icon selected for upload");
+                eventIconUrlSetter.setEnabled(false); // Prevent editing after selection
+            } else if (requestCode == PICK_BANNER_IMAGE_REQUEST) {
+                bannerImageUri = data.getData();
+                eventBannerUrlSetter.setText("New banner selected for upload");
+                eventBannerUrlSetter.setEnabled(false); // Prevent editing after selection
+            }
+        }
     }
 
     private void createEvent() {
-        // to get organizer ID
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
             Toast.makeText(this, "You must be logged in to create an event.", Toast.LENGTH_SHORT).show();
             return;
         }
-        String organizerId = currentUser.getUid();
 
         String eventTitle = eventTitleSetter.getText().toString().trim();
         String eventCapacityStr = eventCapacitySetter.getText().toString().trim();
 
         if (eventTitle.isEmpty() || eventCapacityStr.isEmpty()) {
-            Toast.makeText(this, "Please fill all fields.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please fill in Event Name and Capacity.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        int eventCapacity = Integer.parseInt(eventCapacityStr);
+        setLoading(true);
 
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(
-                eventDatePicker.getYear(),
-                eventDatePicker.getMonth(),
-                eventDatePicker.getDayOfMonth(),
-                eventTimePicker.getHour(),
-                eventTimePicker.getMinute()
-        );
-        long dateTime = calendar.getTimeInMillis();
+        // Task 1: Determine the final Icon URL as a String
+        Task<String> iconUrlTask;
+        if (iconImageUri != null) {
+            // If a new image was uploaded, get its download URL
+            iconUrlTask = storageController.uploadImage(iconImageUri, "event_images")
+                    .onSuccessTask(uri -> Tasks.forResult(uri.toString()));
+        } else {
+            // Otherwise, use the text from the EditText field
+            iconUrlTask = Tasks.forResult(eventIconUrlSetter.getText().toString().trim());
+        }
 
-        eventModel.saveEvent(new Event(
-                eventTitle,
-                "Default Location",
-                dateTime,
-                eventCapacity,
-                0.0,
-                "Default Description",
-                "General",
-                organizerId,
-                null
-        ));
+        // Task 2: Determine the final Banner URL as a String
+        Task<String> bannerUrlTask;
+        if (bannerImageUri != null) {
+            // If a new image was uploaded, get its download URL
+            bannerUrlTask = storageController.uploadImage(bannerImageUri, "event_images")
+                    .onSuccessTask(uri -> Tasks.forResult(uri.toString()));
+        } else {
+            // Otherwise, use the text from the EditText field
+            bannerUrlTask = Tasks.forResult(eventBannerUrlSetter.getText().toString().trim());
+        }
 
-        Toast.makeText(this, "Event created successfully!", Toast.LENGTH_SHORT).show();
-        Log.d("EventCreationActivity", "Event creation data sent to model.");
+        // Combine both tasks. This will only run after both URLs are ready.
+        Tasks.whenAllSuccess(iconUrlTask, bannerUrlTask).addOnSuccessListener(results -> {
+            // 'results' is a List containing the outcomes of the tasks in order.
+            String iconUrlResult = (String) results.get(0);
+            String bannerUrlResult = (String) results.get(1);
 
-        finish();
+            // Apply defaults if the URLs are empty
+            String finalIconUrl = TextUtils.isEmpty(iconUrlResult) ? Constants.DEFAULT_EVENT_ICON_URL : iconUrlResult;
+            String finalBannerUrl = TextUtils.isEmpty(bannerUrlResult) ? Constants.DEFAULT_EVENT_BANNER_URL : bannerUrlResult;
+
+            Calendar calendar = Calendar.getInstance();
+            calendar.set(
+                    eventDatePicker.getYear(),
+                    eventDatePicker.getMonth(),
+                    eventDatePicker.getDayOfMonth(),
+                    eventTimePicker.getHour(),
+                    eventTimePicker.getMinute()
+            );
+            long dateTime = calendar.getTimeInMillis();
+            int eventCapacity = Integer.parseInt(eventCapacityStr);
+            String organizerId = currentUser.getUid();
+
+            Event newEvent = new Event(
+                    eventTitle,
+                    "Default Location",
+                    dateTime,
+                    eventCapacity,
+                    0.0,
+                    "Default Description",
+                    "General",
+                    organizerId,
+                    finalIconUrl,
+                    finalBannerUrl
+            );
+
+            eventModel.saveEvent(newEvent);
+            setLoading(false);
+            Toast.makeText(this, "Event created successfully!", Toast.LENGTH_SHORT).show();
+            finish();
+
+        }).addOnFailureListener(e -> {
+            setLoading(false);
+            Toast.makeText(this, "Failed to create event: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        });
     }
 
-    // Back button
+    private void setLoading(boolean isLoading) {
+        if (isLoading) {
+            progressBar.setVisibility(View.VISIBLE);
+            eventCreationConfirm.setEnabled(false);
+        } else {
+            progressBar.setVisibility(View.GONE);
+            eventCreationConfirm.setEnabled(true);
+        }
+    }
+
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == android.R.id.home) {

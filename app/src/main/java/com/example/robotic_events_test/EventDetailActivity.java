@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.View;
@@ -16,6 +17,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.bumptech.glide.Glide;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
@@ -104,7 +107,9 @@ public class EventDetailActivity extends AppCompatActivity {
         if (isOrganizer) {
             fabEditEvent.setVisibility(View.VISIBLE);
             fabEditEvent.setOnClickListener(v -> {
-                Toast.makeText(this, "Edit event (not implemented yet)", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(this, EventEditActivity.class);
+                intent.putExtra("id", event.getId());
+                startActivity(intent);
             });
 
             fabGenQr.setVisibility(View.VISIBLE);
@@ -175,6 +180,7 @@ public class EventDetailActivity extends AppCompatActivity {
         TextView detailCategory = findViewById(R.id.detailCategory);
         TextView detailOrganizer = findViewById(R.id.detailOrganizer);
         TextView detailDescription = findViewById(R.id.detailDescription);
+        ImageView detailImage = findViewById(R.id.detailImage);
 
         detailTitle.setText(event.getTitle());
         detailWhen.setText(DateFormat.format("MMM dd, yyyy h:mm a", event.getDateTime()));
@@ -184,6 +190,13 @@ public class EventDetailActivity extends AppCompatActivity {
         detailCategory.setText(event.getCategory());
         detailOrganizer.setText("Organizer ID: " + event.getOrganizerId());
         detailDescription.setText(event.getDescription() != null ? event.getDescription() : "No description available");
+
+        String bannerUrl = TextUtils.isEmpty(event.getBannerUrl()) ? Constants.DEFAULT_EVENT_BANNER_URL : event.getBannerUrl();
+        Glide.with(this)
+                .load(bannerUrl)
+                .placeholder(R.drawable.ic_launcher_background) // A default placeholder
+                .error(Constants.DEFAULT_EVENT_BANNER_URL) // Fallback on error
+                .into(detailImage);
     }
 
     private void loadWaitlistData() {
