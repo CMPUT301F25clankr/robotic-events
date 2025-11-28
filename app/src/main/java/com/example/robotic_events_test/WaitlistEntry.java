@@ -5,6 +5,7 @@ import java.io.Serializable;
 
 /**
  * MODEL: Represents a single waitlist entry in the database
+ * Extended with geolocation fields for US 02.02.02 and US 02.02.03
  */
 public class WaitlistEntry implements Serializable {
     private String id;
@@ -13,8 +14,16 @@ public class WaitlistEntry implements Serializable {
     private long joinedAt;
     private String status;
 
+    // NEW: Geolocation fields
+    private double latitude;
+    private double longitude;
+    private String locationName;
+
     // Empty constructor required for Firestore
     public WaitlistEntry() {
+        this.latitude = 0.0;
+        this.longitude = 0.0;
+        this.locationName = "";
     }
 
     public WaitlistEntry(@NonNull String eventId, @NonNull String userId) {
@@ -22,9 +31,24 @@ public class WaitlistEntry implements Serializable {
         this.userId = userId;
         this.joinedAt = System.currentTimeMillis();
         this.status = "active";
+        this.latitude = 0.0;
+        this.longitude = 0.0;
+        this.locationName = "";
     }
 
-    // Getters and Setters
+    // NEW: Constructor with geolocation
+    public WaitlistEntry(@NonNull String eventId, @NonNull String userId,
+                         double latitude, double longitude, String locationName) {
+        this.eventId = eventId;
+        this.userId = userId;
+        this.joinedAt = System.currentTimeMillis();
+        this.status = "active";
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.locationName = locationName != null ? locationName : "";
+    }
+
+    // Existing Getters and Setters
     public String getId() {
         return id;
     }
@@ -63,5 +87,30 @@ public class WaitlistEntry implements Serializable {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    // NEW: Geolocation Getters and Setters
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
+    }
+
+    public String getLocationName() {
+        return locationName;
+    }
+
+    public void setLocationName(String locationName) {
+        this.locationName = locationName != null ? locationName : "";
     }
 }
