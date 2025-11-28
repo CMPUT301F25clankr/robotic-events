@@ -48,6 +48,21 @@
         <activity
             android:name=".NotificationsActivity"
             android:exported="false" />
+        <activity
+            android:name=".AdminAccessActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AdminDashboardActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AdminUserActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AdminUserDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AdminEventActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

@@ -1,5 +1,7 @@
 package com.example.robotic_events_test;
 
+import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,11 +11,13 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
-public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder> {
+public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.UserViewHolder> {
 
     private List<User> userList;
+    private Context context;
 
-    public UserAdapter(List<User> userList) {
+    public UserListAdapter(Context context, List<User> userList) {
+        this.context = context;
         this.userList = userList;
     }
 
@@ -30,6 +34,12 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
         holder.usernameTextView.setText(user.getName());
         holder.userTypeTextView.setText(user.isOrganizer() ? "Organizer" : "Regular User");
         holder.userProfileImageView.setImageResource(R.drawable.ic_profile);
+
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(context, AdminUserDetailActivity.class);
+            intent.putExtra("USER_ID", user.getUid());
+            context.startActivity(intent);
+        });
     }
 
     @Override
