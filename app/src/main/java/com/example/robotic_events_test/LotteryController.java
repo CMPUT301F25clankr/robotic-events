@@ -102,6 +102,22 @@ public class LotteryController {
                                                 Log.e(TAG, "Failed saving lottery", saveTask.getException());
                                                 return false;
                                             }
+                                            
+                                            // Calculate Expiry Time: 10% of remaining time until event starts
+                                            long currentTime = System.currentTimeMillis();
+                                            long eventTime = event.getDateTime();
+                                            long timeUntilEvent = eventTime - currentTime;
+                                            
+                                            long expiryTime = 0;
+                                            if (timeUntilEvent > 0) {
+                                                // 10% of remaining time
+                                                long allowedResponseTime = (long) (timeUntilEvent * 0.10);
+                                                expiryTime = currentTime + allowedResponseTime;
+                                            } else {
+                                                // Event already started? Should we allow? Assume immediate expiry or small buffer.
+                                                // For logic sake, if event passed, expiry is now.
+                                                expiryTime = currentTime; 
+                                            }
 
                                             // Create notifications for selected users
                                             for (String userId : selected) {
@@ -113,6 +129,7 @@ public class LotteryController {
                                                     System.currentTimeMillis(),
                                                     eventId
                                                 );
+                                                notification.setExpiryTimestamp(expiryTime); // Set Expiry
                                                 db.collection("notifications").add(notification);
                                             }
 
@@ -234,12 +251,6 @@ public class LotteryController {
                     }
                     
                     // SAVE updated LotteryResult
-                    // We need to use .set() or overwrite, but saveLotteryResult uses .add().
-                    // We should update the existing document.
-                    // Ideally LotteryModel should have update method.
-                    // For now, we can just overwrite using db.collection.document(id).set(...)
-                    // or modify LotteryModel.
-                    
                     String docId = lastResult.getId();
                     if (docId != null) {
                         db.collection("lotteries").document(docId).set(lastResult);
@@ -247,6 +258,18 @@ public class LotteryController {
 
                     // 4. Notify the winner if found
                     if (replacementFound && luckyWinnerId != null) {
+                        // Calculate Expiry for replacement too
+                        long currentTime = System.currentTimeMillis();
+                        long eventTime = event.getDateTime();
+                        long timeUntilEvent = eventTime - currentTime;
+                        long expiryTime = 0;
+                        if (timeUntilEvent > 0) {
+                            long allowedResponseTime = (long) (timeUntilEvent * 0.10);
+                            expiryTime = currentTime + allowedResponseTime;
+                        } else {
+                            expiryTime = currentTime;
+                        }
+                        
                         Notifications notification = new Notifications(
                                 true,
                                 "You have been selected from the waitlist for: " + event.getTitle(),
@@ -255,6 +278,7 @@ public class LotteryController {
                                 System.currentTimeMillis(),
                                 eventId
                         );
+                        notification.setExpiryTimestamp(expiryTime);
                         
                         return db.collection("notifications").add(notification).continueWith(nTask -> true);
                     }
