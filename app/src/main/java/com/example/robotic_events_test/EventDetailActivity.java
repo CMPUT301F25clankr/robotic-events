@@ -149,7 +149,13 @@ public class EventDetailActivity extends AppCompatActivity {
                     startActivity(intent);
                 });
             }
-            runLotteryButton.setVisibility(View.VISIBLE);
+            
+            // Hide Run Lottery button if event is closed
+            if ("closed".equals(event.getStatus())) {
+                runLotteryButton.setVisibility(View.GONE);
+            } else {
+                runLotteryButton.setVisibility(View.VISIBLE);
+            }
             // runLotteryButton click listener is in setupButtonListeners()
 
             viewLotteryResultsButton.setVisibility(View.VISIBLE);
@@ -162,6 +168,13 @@ public class EventDetailActivity extends AppCompatActivity {
             fabEditEvent.setVisibility(View.GONE);
             runLotteryButton.setVisibility(View.GONE);
             viewLotteryResultsButton.setVisibility(View.GONE);
+        }
+        
+        // Handle Join Waitlist Button state based on event status
+        if ("closed".equals(event.getStatus())) {
+            joinLeaveWaitlistButton.setEnabled(false);
+            joinLeaveWaitlistButton.setText("Event Closed");
+            joinLeaveWaitlistButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.GRAY));
         }
     }
 
@@ -220,6 +233,12 @@ public class EventDetailActivity extends AppCompatActivity {
                 Toast.makeText(this, "Please log in to join waitlist", Toast.LENGTH_SHORT).show();
                 return;
             }
+            
+            if ("closed".equals(event.getStatus())) {
+                Toast.makeText(this, "Registration is closed for this event.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
             handleWaitlistToggle();
         });
         runLotteryButton.setOnClickListener(v -> {
@@ -238,7 +257,11 @@ public class EventDetailActivity extends AppCompatActivity {
                     .addOnSuccessListener(success -> {
                         if (success) {
                             Toast.makeText(this, "Lottery run successfully", Toast.LENGTH_SHORT).show();
-                            // Optionally refresh UI, show results, send notifications, etc.
+                            
+                            // Update local event status and UI
+                            event.setStatus("closed");
+                            initializeViews(); // Refresh button states
+                            
                         } else {
                             Toast.makeText(this, "Lottery could not be run", Toast.LENGTH_SHORT).show();
                         }
@@ -345,6 +368,14 @@ public class EventDetailActivity extends AppCompatActivity {
     }
 
     private void updateButtonText() {
+        if ("closed".equals(event.getStatus())) {
+            // Double check status in updateButtonText as well
+            joinLeaveWaitlistButton.setText("Event Closed");
+            joinLeaveWaitlistButton.setEnabled(false);
+            joinLeaveWaitlistButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.GRAY));
+            return;
+        }
+
         if (isInWaitlist) {
             joinLeaveWaitlistButton.setText("Leave Waitlist");
             joinLeaveWaitlistButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(getColor(android.R.color.holo_red_dark)));

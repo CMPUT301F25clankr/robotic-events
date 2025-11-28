@@ -129,6 +129,10 @@ public class LotteryController {
                                                 db.collection("notifications").add(notification);
                                             }
 
+                                            // Close the event registration
+                                            event.setStatus("closed");
+                                            eventModel.saveEvent(event);
+
                                             Log.d(TAG, "Lottery completed for event: " + eventId);
                                             return true;
                                         });
