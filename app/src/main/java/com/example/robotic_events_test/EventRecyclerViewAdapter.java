@@ -2,10 +2,12 @@ package com.example.robotic_events_test;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -18,19 +20,21 @@ import java.util.Locale;
 
 public class EventRecyclerViewAdapter extends RecyclerView.Adapter<EventRecyclerViewAdapter.ViewHolder> {
 
-    private Context context;
-    private ArrayList<Event> events;
+    private final Context context;
+    private final ArrayList<Event> events;
+    private final SimpleDateFormat dateFormatter = new SimpleDateFormat("MMM dd, h:mm a", Locale.getDefault());
+    private final boolean isOrganizer;
 
-    public EventRecyclerViewAdapter(Context context, ArrayList<Event> events) {
+    public EventRecyclerViewAdapter(Context context, ArrayList<Event> events, boolean isOrganizer) {
         this.context = context;
         this.events = events;
+        this.isOrganizer = isOrganizer;
     }
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(context)
-                .inflate(R.layout.events_row, parent, false); // your card layout XML
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.events_row, parent, false);
         return new ViewHolder(view);
     }
 
@@ -40,36 +44,17 @@ public class EventRecyclerViewAdapter extends RecyclerView.Adapter<EventRecycler
 
         holder.eventTitle.setText(event.getTitle());
         holder.eventLocation.setText(event.getLocation());
+        holder.eventDateTime.setText(dateFormatter.format(new Date(event.getDateTime())));
 
-        // Convert timestamp to readable date later — placeholder for now:
-        holder.eventDateTime.setText(formatDateTime(event.getDateTime()));
+        if (isOrganizer) {
+            holder.eventRowRoot.setBackgroundColor(Color.parseColor("#E8EAF6"));
+            holder.eventTitle.setTextColor(Color.parseColor("#1565C0"));
+        } else {
+            holder.eventRowRoot.setBackgroundColor(Color.parseColor("#F3E5F5"));
+            holder.eventTitle.setTextColor(Color.parseColor("#8E24AA"));
+        }
 
-
-        holder.eventImage.setImageResource(event.getImageResId());
-
-        holder.itemView.setOnClickListener(v -> {
-            int currentPosition = holder.getAdapterPosition();
-            if (currentPosition == RecyclerView.NO_POSITION) return;
-
-            Event clickedEvent = events.get(currentPosition);
-            Intent intent = new Intent(v.getContext(), EventDetailActivity.class);
-
-            intent.putExtra("id", clickedEvent.getId());
-            intent.putExtra("title", clickedEvent.getTitle());
-            intent.putExtra("description", clickedEvent.getDescription());
-            intent.putExtra("dateTime", clickedEvent.getDateTime());
-            intent.putExtra("location", clickedEvent.getLocation());
-            intent.putExtra("category", clickedEvent.getCategory());
-            intent.putExtra("organizerId", clickedEvent.getOrganizerId());
-            intent.putExtra("totalCapacity", clickedEvent.getTotalCapacity());
-            intent.putExtra("status", clickedEvent.getStatus());
-            intent.putExtra("imageResId", clickedEvent.getImageResId());
-            intent.putExtra("price", clickedEvent.getPrice());
-
-            v.getContext().startActivity(intent);
-        });
-
-
+        holder.bind(event, context);
     }
 
     @Override
@@ -77,27 +62,27 @@ public class EventRecyclerViewAdapter extends RecyclerView.Adapter<EventRecycler
         return events.size();
     }
 
-    private String formatDateTime(long timestamp) {
-        Date date = new Date(timestamp);
-        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, h:mm a", Locale.getDefault());
-        return sdf.format(date);
-    }
-
-
     public static class ViewHolder extends RecyclerView.ViewHolder {
-
-        ImageView eventImage;
-        TextView eventTitle;
-        TextView eventDateTime;
-        TextView eventLocation;
+        LinearLayout eventRowRoot;
+        TextView eventTitle, eventLocation, eventDateTime;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-
-            eventImage = itemView.findViewById(R.id.eventImage);
+            eventRowRoot = itemView.findViewById(R.id.eventRowRoot);
             eventTitle = itemView.findViewById(R.id.eventTitle);
+            eventLocation = itemView.findViewById(R.id.eventLocation);
             eventDateTime = itemView.findViewById(R.id.eventDateTime);
-            eventLocation = itemView.findViewById(R.id.eventLocation); // using distance TextView for now
         }
+
+        public void bind(Event event, Context context) {
+            // Set click listener on the eventRowRoot instead of itemView
+            eventRowRoot.setOnClickListener(v -> {
+                Intent intent = new Intent(context, EventDetailActivity.class);
+                intent.putExtra("event", event);
+                context.startActivity(intent);
+            });
+        }
+
+
     }
 }

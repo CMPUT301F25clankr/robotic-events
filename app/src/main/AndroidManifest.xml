@@ -7,35 +7,46 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
+        android:label="robotic_events_test"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Roboticeventstest">
-
-        <!-- Sign up -->
+        <activity
+            android:name=".QRScanRedirect"
+            android:exported="false" />
         <activity
             android:name=".SignupActivity"
             android:exported="false"
-            android:theme="@style/Theme.Roboticeventstest" />
-
-        <!-- Login is the launcher -->
+            android:theme="@style/Theme.Roboticeventstest" /> <!-- Login is the launcher -->
         <activity
             android:name=".LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-
-        <!-- Main list of events -->
+        </activity> <!-- Main list of events -->
         <activity
             android:name=".MainActivity"
-            android:exported="false" />
-
-        <!-- NEW: Event details screen opened on row click -->
+            android:exported="true" />
+        <activity
+            android:name=".LotteryResultActivity"
+            android:exported="false" /> <!-- NEW: Event details screen opened on row click -->
         <activity
             android:name=".EventDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ProfileActivity"
+            android:exported="false" />
+        <activity
+            android:name=".EventCreationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".EventEditActivity"
+            android:exported="false" />
+        <activity
+            android:name=".NotificationsActivity"
             android:exported="false" />
     </application>
 

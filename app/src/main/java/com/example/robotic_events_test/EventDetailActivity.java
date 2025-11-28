@@ -1,59 +1,308 @@
 package com.example.robotic_events_test;
 
+import android.annotation.SuppressLint;
+import android.app.Dialog;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.text.format.DateFormat;
+import android.util.Log;
+import android.view.View;
+import android.view.Window;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
-
-import androidx.annotation.Nullable;
+import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.WriterException;
+import com.journeyapps.barcodescanner.BarcodeEncoder;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
+import java.util.Objects;
 
+/**
+ * VIEW: Displays event details and handles user interactions
+ * Uses WaitlistController for all waitlist operations (MVC pattern)
+ */
 public class EventDetailActivity extends AppCompatActivity {
 
-    private final SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, h:mm a", Locale.getDefault());
+    private Event event;
+    private FirebaseAuth auth;
+    // fields
+    private LotteryController lotteryController;
+    private Button runLotteryButton;
 
+    private WaitlistController waitlistController;  // CONTROLLER
+    private boolean isInWaitlist = false;
+    private boolean isOrganizer = false;
+
+    // UI Elements
+    private Button joinLeaveWaitlistButton;
+    private TextView detailWaitlist;
+
+    @SuppressLint({"SetTextI18n", "DefaultLocale"})
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_event_detail);
 
-        ImageView image   = findViewById(R.id.detailImage);
-        TextView title    = findViewById(R.id.detailTitle);
-        TextView when     = findViewById(R.id.detailWhen);
-        TextView where    = findViewById(R.id.detailWhere);
-        TextView price    = findViewById(R.id.detailPrice);
-//        TextView status   = findViewById(R.id.detailStatus);
-        TextView category = findViewById(R.id.detailCategory);
-        TextView org      = findViewById(R.id.detailOrganizer);
-        TextView cap      = findViewById(R.id.detailCapacity);
-        TextView desc     = findViewById(R.id.detailDescription);
+        lotteryController = new LotteryController();
 
-        String id          = getIntent().getStringExtra("id");
-        String t           = safe(getIntent().getStringExtra("title"));
-        String d           = safe(getIntent().getStringExtra("description"));
-        long dateTime      = getIntent().getLongExtra("dateTime", 0L);
-        String loc         = safe(getIntent().getStringExtra("location"));
-        String cat         = safe(getIntent().getStringExtra("category"));
-        String organizerId = safe(getIntent().getStringExtra("organizerId"));
-        int totalCapacity  = getIntent().getIntExtra("totalCapacity", 0);
-        String st          = safe(getIntent().getStringExtra("status"));
-        int imgResId       = getIntent().getIntExtra("imageResId", 0);
-        double pr          = getIntent().getDoubleExtra("price", 0.0);
+        auth = FirebaseAuth.getInstance();
+        waitlistController = new WaitlistController();  // Initialize controller
 
-        if (imgResId != 0) image.setImageResource(imgResId);
-        title.setText(t.isEmpty() ? "(Untitled)" : t);
-        when.setText(dateTime > 0 ? sdf.format(new Date(dateTime)) : "");
-        where.setText(loc);
-        price.setText(pr > 0 ? String.format(Locale.getDefault(), "$%.2f", pr) : "Free");
-//        status.setText(st);
-        category.setText(cat);
-        org.setText(organizerId);
-        cap.setText(String.valueOf(totalCapacity));
-        desc.setText(d);
+        // Get passed event
+        event = (Event) getIntent().getSerializableExtra("event");
+        if (event == null) {
+            Toast.makeText(this, "Error: Event not found", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        // Check if current user is the organizer
+        if (auth.getCurrentUser() != null) {
+            isOrganizer = event.getOrganizerId().equals(auth.getCurrentUser().getUid());
+        }
+
+        // Setup Toolbar
+        MaterialToolbar toolbar = findViewById(R.id.eventDetailToolbar);
+        toolbar.setNavigationOnClickListener(v -> {
+            Log.d("EventDetail", "Back button clicked");
+            finish();
+        });
+
+        // Initialize views
+        initializeViews();
+
+        // Populate UI with event data
+        populateEventDetails();
+
+        // Load waitlist data
+        loadWaitlistData();
+
+        // Setup button listeners
+        setupButtonListeners();
     }
 
-    private String safe(String s) { return s == null ? "" : s; }
+    private void initializeViews() {
+        detailWaitlist = findViewById(R.id.detailWaitlist);
+        joinLeaveWaitlistButton = findViewById(R.id.joinLeaveWaitlistButton);
+
+        FloatingActionButton fabEditEvent = findViewById(R.id.fab_edit_event);
+        FloatingActionButton fabGenQr = findViewById(R.id.gen_qr_code);
+        runLotteryButton = findViewById(R.id.runLotteryButton);
+        Button viewLotteryResultsButton = findViewById(R.id.viewLotteryResultsButton);
+
+        // Show edit FAB and lottery buttons only if user is organizer
+        if (isOrganizer) {
+            fabEditEvent.setVisibility(View.VISIBLE);
+            fabEditEvent.setOnClickListener(v -> {
+                Toast.makeText(this, "Edit event (not implemented yet)", Toast.LENGTH_SHORT).show();
+            });
+
+            fabGenQr.setVisibility(View.VISIBLE);
+            fabGenQr.setOnClickListener(v -> {
+                // Generate QR Code stuff
+                // Create dialog
+                Dialog dialog = new Dialog(this);
+                dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+                dialog.setContentView(R.layout.gen_qr_code_dialog);
+                Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawable(new ColorDrawable(Color.parseColor("#80000000")));
+
+                if (!event.getId().isEmpty() && event.getId() != null) {
+                    Bitmap qr = generateQRCode(event.getId());
+                    ImageView qrView = dialog.findViewById(R.id.qr_code_dialog_img);
+                    if (qr != null) {
+                        Toast.makeText(this, "Showing QR code", Toast.LENGTH_SHORT).show();
+                        qrView.setImageBitmap(qr);
+                    }
+                }
+
+                // Show dialog
+                dialog.show();
+            });
+
+            runLotteryButton.setVisibility(View.VISIBLE);
+            // runLotteryButton click listener is in setupButtonListeners()
+
+            viewLotteryResultsButton.setVisibility(View.VISIBLE);
+            viewLotteryResultsButton.setOnClickListener(v -> {
+                Intent intent = new Intent(this, LotteryResultActivity.class);
+                intent.putExtra("eventId", event.getId());
+                startActivity(intent);
+            });
+        } else {
+            fabEditEvent.setVisibility(View.GONE);
+            runLotteryButton.setVisibility(View.GONE);
+            viewLotteryResultsButton.setVisibility(View.GONE);
+        }
+    }
+
+
+    private void populateEventDetails() {
+        TextView detailTitle = findViewById(R.id.detailTitle);
+        TextView detailWhen = findViewById(R.id.detailWhen);
+        TextView detailWhere = findViewById(R.id.detailWhere);
+        TextView detailCapacity = findViewById(R.id.detailCapacity);
+        TextView detailPrice = findViewById(R.id.detailPrice);
+        TextView detailCategory = findViewById(R.id.detailCategory);
+        TextView detailOrganizer = findViewById(R.id.detailOrganizer);
+        TextView detailDescription = findViewById(R.id.detailDescription);
+
+        detailTitle.setText(event.getTitle());
+        detailWhen.setText(DateFormat.format("MMM dd, yyyy h:mm a", event.getDateTime()));
+        detailWhere.setText(event.getLocation());
+        detailCapacity.setText("Capacity\n" + event.getTotalCapacity());
+        detailPrice.setText(String.format("$%.2f", event.getPrice()));
+        detailCategory.setText(event.getCategory());
+        detailOrganizer.setText("Organizer ID: " + event.getOrganizerId());
+        detailDescription.setText(event.getDescription() != null ? event.getDescription() : "No description available");
+    }
+
+    private void loadWaitlistData() {
+        // Load waitlist count through controller
+        waitlistController.getWaitlistCount(event.getId())
+                .addOnSuccessListener(count -> {
+                    detailWaitlist.setText("Waitlisted\n" + count);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("EventDetail", "Error loading waitlist count", e);
+                    detailWaitlist.setText("Waitlisted\n0");
+                });
+
+        // Check if current user is in waitlist
+        if (auth.getCurrentUser() != null) {
+            String userId = auth.getCurrentUser().getUid();
+            waitlistController.isUserInWaitlist(event.getId(), userId)
+                    .addOnSuccessListener(inWaitlist -> {
+                        isInWaitlist = inWaitlist;
+                        updateButtonText();
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e("EventDetail", "Error checking waitlist status", e);
+                        updateButtonText();
+                    });
+        } else {
+            updateButtonText();
+        }
+    }
+
+    private void setupButtonListeners() {
+        joinLeaveWaitlistButton.setOnClickListener(v -> {
+            if (auth.getCurrentUser() == null) {
+                Toast.makeText(this, "Please log in to join waitlist", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            handleWaitlistToggle();
+        });
+        runLotteryButton.setOnClickListener(v -> {
+            if (!isOrganizer) {
+                Toast.makeText(this, "Only the organizer can run the lottery", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (auth.getCurrentUser() == null) {
+                Toast.makeText(this, "Please log in", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            String currentUserId = auth.getCurrentUser().getUid();
+
+            lotteryController.runLottery(event.getId(), currentUserId)
+                    .addOnSuccessListener(success -> {
+                        if (success) {
+                            Toast.makeText(this, "Lottery run successfully", Toast.LENGTH_SHORT).show();
+                            // Optionally refresh UI, show results, send notifications, etc.
+                        } else {
+                            Toast.makeText(this, "Lottery could not be run", Toast.LENGTH_SHORT).show();
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Error running lottery", Toast.LENGTH_SHORT).show();
+                        Log.e("EventDetail", "Error running lottery", e);
+                    });
+        });
+
+    }
+
+    private void handleWaitlistToggle() {
+        String userId = auth.getCurrentUser().getUid();
+
+        if (isInWaitlist) {
+            // Leave waitlist through controller
+            waitlistController.leaveWaitlist(event.getId(), userId)
+                    .addOnSuccessListener(success -> {
+                        if (success) {
+                            isInWaitlist = false;
+                            updateButtonText();
+                            refreshWaitlistCount();
+                            Toast.makeText(this, "Removed from waitlist", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(this, "Failed to leave waitlist", Toast.LENGTH_SHORT).show();
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Error leaving waitlist", Toast.LENGTH_SHORT).show();
+                        Log.e("EventDetail", "Error leaving waitlist", e);
+                    });
+        } else {
+            // Join waitlist through controller
+            waitlistController.joinWaitlist(event.getId(), userId)
+                    .addOnSuccessListener(success -> {
+                        if (success) {
+                            isInWaitlist = true;
+                            updateButtonText();
+                            refreshWaitlistCount();
+                            Toast.makeText(this, "Added to waitlist!", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(this, "Failed to join waitlist", Toast.LENGTH_SHORT).show();
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Error joining waitlist", Toast.LENGTH_SHORT).show();
+                        Log.e("EventDetail", "Error joining waitlist", e);
+                    });
+        }
+    }
+
+    private void updateButtonText() {
+        if (isInWaitlist) {
+            joinLeaveWaitlistButton.setText("Leave Waitlist");
+            joinLeaveWaitlistButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(getColor(android.R.color.holo_red_dark)));
+        } else {
+            joinLeaveWaitlistButton.setText("Join Waitlist");
+            joinLeaveWaitlistButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#008000")));
+        }
+    }
+
+    private void refreshWaitlistCount() {
+        waitlistController.getWaitlistCount(event.getId())
+                .addOnSuccessListener(count -> {
+                    detailWaitlist.setText("Waitlisted\n" + count);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("EventDetail", "Error refreshing waitlist count", e);
+                });
+    }
+
+    private Bitmap generateQRCode(String text)
+    {
+        BarcodeEncoder barcodeEncoder
+                = new BarcodeEncoder();
+        try {
+
+            // This method returns a Bitmap image of the
+            // encoded text with a height and width of 400
+            // pixels.
+            return barcodeEncoder.encodeBitmap(text, BarcodeFormat.QR_CODE, 400, 400);
+        }
+        catch (WriterException e) {
+            Log.e("EventDetail", "Failed");
+        }
+        return null;
+    }
 }
