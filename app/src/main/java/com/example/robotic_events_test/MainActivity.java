@@ -13,6 +13,7 @@ import android.widget.LinearLayout;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -59,6 +60,9 @@ public class MainActivity extends AppCompatActivity {
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         Button myEventsButton = findViewById(R.id.my_events_button);
         ImageButton qrButton = findViewById(R.id.qr_button);
+        
+        // Get the filter bar container to hide it for organizers
+        ConstraintLayout filterBar = findViewById(R.id.filter_bar);
 
         SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
         isOrganizer = prefs.getBoolean("isOrganizer", false);
@@ -71,12 +75,30 @@ public class MainActivity extends AppCompatActivity {
             myEventsButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#1976D2"))); // Blue button
             qrButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#1976D2"))); // Blue QR button
             fabAddEvent.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#1976D2"))); // Blue FAB
+            
+            // HIDE QR AND MY EVENTS BUTTONS FOR ORGANIZER
+            qrButton.setVisibility(View.GONE);
+            myEventsButton.setVisibility(View.GONE);
+            
+            // NEW: Hide the filter bar entirely for organizers
+            if (filterBar != null) {
+                filterBar.setVisibility(View.GONE);
+            }
+            
         } else {
             // User purple theme
             rootLayout.setBackgroundColor(Color.parseColor("#F3E5F5")); // Light purple background
             toolbar.setBackgroundColor(Color.parseColor("#7B1FA2")); // Purple toolbar
             myEventsButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#7B1FA2"))); // Purple button
             qrButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#7B1FA2"))); // Purple QR button
+            
+            // Ensure they are visible for regular users
+            qrButton.setVisibility(View.VISIBLE);
+            myEventsButton.setVisibility(View.VISIBLE);
+            
+            if (filterBar != null) {
+                filterBar.setVisibility(View.VISIBLE);
+            }
         }
 
         fabAddEvent.setVisibility(isOrganizer ? View.VISIBLE : View.GONE);

@@ -28,11 +28,6 @@ public class LotteryController {
 
     /**
      * Run lottery for an event.
-     * Only allowed if currentUserId == event.organizerId.
-     *
-     * @param eventId       Event to run lottery for
-     * @param currentUserId Logged-in user
-     * @return Task<Boolean> true if lottery ran, false otherwise
      */
     public Task<Boolean> runLottery(String eventId, String currentUserId) {
         if (eventId == null || eventId.isEmpty()
@@ -65,18 +60,13 @@ public class LotteryController {
                                 }
 
                                 int capacity = event.getTotalCapacity();
-                                // You might also track already accepted attendees; for now assume
-                                // everyone on waitlist is competing for all capacity.
-
                                 List<String> allUserIds = new ArrayList<>();
                                 for (WaitlistEntry e : entries) {
                                     allUserIds.add(e.getUserId());
                                 }
 
-                                // Shuffle for randomness
                                 Collections.shuffle(allUserIds);
 
-                                // Selected up to capacity
                                 List<String> selected = new ArrayList<>();
                                 List<String> notSelected = new ArrayList<>();
 
@@ -103,23 +93,20 @@ public class LotteryController {
                                                 return false;
                                             }
                                             
-                                            // Calculate Expiry Time: 10% of remaining time until event starts
+                                            // Calculate Expiry Time: 10% of remaining time
                                             long currentTime = System.currentTimeMillis();
                                             long eventTime = event.getDateTime();
                                             long timeUntilEvent = eventTime - currentTime;
                                             
                                             long expiryTime = 0;
                                             if (timeUntilEvent > 0) {
-                                                // 10% of remaining time
                                                 long allowedResponseTime = (long) (timeUntilEvent * 0.10);
                                                 expiryTime = currentTime + allowedResponseTime;
                                             } else {
-                                                // Event already started? Should we allow? Assume immediate expiry or small buffer.
-                                                // For logic sake, if event passed, expiry is now.
                                                 expiryTime = currentTime; 
                                             }
 
-                                            // Create notifications for selected users
+                                            // Create notifications
                                             for (String userId : selected) {
                                                 Notifications notification = new Notifications(
                                                     true,
@@ -129,11 +116,10 @@ public class LotteryController {
                                                     System.currentTimeMillis(),
                                                     eventId
                                                 );
-                                                notification.setExpiryTimestamp(expiryTime); // Set Expiry
+                                                notification.setExpiryTimestamp(expiryTime);
                                                 db.collection("notifications").add(notification);
                                             }
 
-                                            // Create notifications for not selected users
                                             for (String userId : notSelected) {
                                                 Notifications notification = new Notifications(
                                                     false,
@@ -146,7 +132,7 @@ public class LotteryController {
                                                 db.collection("notifications").add(notification);
                                             }
 
-                                            // Close the event registration
+                                            // Close event
                                             event.setStatus("closed");
                                             eventModel.saveEvent(event);
 
@@ -161,41 +147,23 @@ public class LotteryController {
         return runLottery(eventId, currentUserId);
     }
 
-    /**
-     * Handle logic when a user declines a spot.
-     * 1. Remove user from selected list (conceptually, waitlist entry removed by WaitlistController)
-     * 2. Find a replacement from the pool of non-selected users.
-     * 3. Update LotteryResult to track the declined user.
-     *
-     * @param eventId  The event ID
-     * @param declinedUserId The ID of the user who declined
-     * @return Task<Boolean> indicating success/failure of finding replacement
-     */
     public Task<Boolean> processDecline(String eventId, String declinedUserId) {
         if (eventId == null || declinedUserId == null) {
             return Tasks.forResult(false);
         }
 
-        // 1. Get the event to get capacity and organizer ID (for notification sender)
         return eventModel.getEvent(eventId).continueWithTask(eventTask -> {
             Event event = eventTask.getResult();
             if (event == null) return Tasks.forResult(false);
 
             String organizerId = event.getOrganizerId();
 
-            // 2. Get current waitlist (user declining should have been removed already or will be)
-            
             return waitlistModel.getWaitlistEntriesByEvent(eventId).continueWithTask(waitlistTask -> {
                 List<WaitlistEntry> entries = waitlistTask.getResult();
-                // entries might be empty if declined user was the last one and removed, but we need to find replacement.
-                // If entries is empty, we can't find replacement.
-                // Note: declined user is removed from waitlist BEFORE this is called in NotificationsAdapter.
                 
-                // 3. Fetch and UPDATE the LotteryResult
                 return lotteryModel.getLatestLotteriesForEvent(eventId).continueWithTask(lotteryTask -> {
                     List<LotteryResult> lotteries = lotteryTask.getResult();
                     if (lotteries == null || lotteries.isEmpty()) {
-                         Log.e(TAG, "No lottery result found to update.");
                          return Tasks.forResult(false);
                     }
                     
@@ -204,7 +172,6 @@ public class LotteryController {
                     List<String> declinedIds = lastResult.getDeclinedUserIds();
                     if (declinedIds == null) declinedIds = new ArrayList<>();
                     
-                    // Move user to declined
                     if (selectedIds != null && selectedIds.contains(declinedUserId)) {
                         selectedIds.remove(declinedUserId);
                     }
@@ -212,23 +179,15 @@ public class LotteryController {
                         declinedIds.add(declinedUserId);
                     }
                     
-                    lastResult.setSelectedUserIds(selectedIds);
-                    lastResult.setDeclinedUserIds(declinedIds);
-                    
-                    // Find replacement from waitlist entries who are NOT selected and NOT declined
-                    // We need to track who is already selected/declined to avoid re-picking them.
-                    // Waitlist entries contains EVERYONE currently in waitlist DB.
-                    // If declined user was removed from DB, they are not in `entries`.
-                    
                     List<String> candidates = new ArrayList<>();
                     List<String> finalSelectedIds = selectedIds != null ? selectedIds : new ArrayList<>();
                     List<String> finalDeclinedIds = declinedIds;
+                    List<String> finalAcceptedIds = lastResult.getAcceptedUserIds() != null ? lastResult.getAcceptedUserIds() : new ArrayList<>();
 
                     if (entries != null) {
                         for (WaitlistEntry entry : entries) {
                             String uid = entry.getUserId();
-                            // Candidate if NOT selected AND NOT declined
-                            if (!finalSelectedIds.contains(uid) && !finalDeclinedIds.contains(uid)) {
+                            if (!finalSelectedIds.contains(uid) && !finalDeclinedIds.contains(uid) && !finalAcceptedIds.contains(uid)) {
                                 candidates.add(uid);
                             }
                         }
@@ -238,37 +197,31 @@ public class LotteryController {
                     String luckyWinnerId = null;
 
                     if (!candidates.isEmpty()) {
-                        // Pick one random candidate
                         Collections.shuffle(candidates);
                         luckyWinnerId = candidates.get(0);
-                        
-                        // Add to selected
                         finalSelectedIds.add(luckyWinnerId);
-                        lastResult.setSelectedUserIds(finalSelectedIds);
                         replacementFound = true;
-                    } else {
-                         Log.d(TAG, "No candidates available to fill the spot.");
                     }
                     
-                    // SAVE updated LotteryResult
+                    // Update object
+                    lastResult.setSelectedUserIds(finalSelectedIds);
+                    lastResult.setDeclinedUserIds(finalDeclinedIds);
+                    
+                    // Use update() instead of set() for safety
                     String docId = lastResult.getId();
                     if (docId != null) {
-                        db.collection("lotteries").document(docId).set(lastResult);
+                        db.collection("lotteries").document(docId).update(
+                            "selectedUserIds", finalSelectedIds,
+                            "declinedUserIds", finalDeclinedIds
+                        );
                     }
 
-                    // 4. Notify the winner if found
                     if (replacementFound && luckyWinnerId != null) {
-                        // Calculate Expiry for replacement too
+                        // Expiry logic...
                         long currentTime = System.currentTimeMillis();
                         long eventTime = event.getDateTime();
                         long timeUntilEvent = eventTime - currentTime;
-                        long expiryTime = 0;
-                        if (timeUntilEvent > 0) {
-                            long allowedResponseTime = (long) (timeUntilEvent * 0.10);
-                            expiryTime = currentTime + allowedResponseTime;
-                        } else {
-                            expiryTime = currentTime;
-                        }
+                        long expiryTime = (timeUntilEvent > 0) ? currentTime + (long)(timeUntilEvent * 0.10) : currentTime;
                         
                         Notifications notification = new Notifications(
                                 true,
@@ -289,24 +242,14 @@ public class LotteryController {
         });
     }
 
-    /**
-     * Handle logic when a user accepts a spot.
-     * 1. Update LotteryResult to track the user as accepted.
-     *
-     * @param eventId  The event ID
-     * @param acceptedUserId The ID of the user who accepted
-     * @return Task<Boolean> indicating success
-     */
     public Task<Boolean> processAccept(String eventId, String acceptedUserId) {
         if (eventId == null || acceptedUserId == null) {
             return Tasks.forResult(false);
         }
 
-        // Fetch and UPDATE the LotteryResult
         return lotteryModel.getLatestLotteriesForEvent(eventId).continueWithTask(lotteryTask -> {
             List<LotteryResult> lotteries = lotteryTask.getResult();
             if (lotteries == null || lotteries.isEmpty()) {
-                 Log.e(TAG, "No lottery result found to update.");
                  return Tasks.forResult(false);
             }
             
@@ -315,7 +258,6 @@ public class LotteryController {
             List<String> acceptedIds = lastResult.getAcceptedUserIds();
             if (acceptedIds == null) acceptedIds = new ArrayList<>();
             
-            // Move user from selected (pending) to accepted
             if (selectedIds != null && selectedIds.contains(acceptedUserId)) {
                 selectedIds.remove(acceptedUserId);
             }
@@ -323,16 +265,15 @@ public class LotteryController {
                 acceptedIds.add(acceptedUserId);
             }
             
-            lastResult.setSelectedUserIds(selectedIds);
-            lastResult.setAcceptedUserIds(acceptedIds);
-            
-            // SAVE updated LotteryResult
             String docId = lastResult.getId();
             if (docId != null) {
-                return db.collection("lotteries").document(docId).set(lastResult).continueWith(t -> true);
+                // Use update() for specific fields
+                return db.collection("lotteries").document(docId)
+                        .update("selectedUserIds", selectedIds, "acceptedUserIds", acceptedIds)
+                        .continueWith(t -> true);
             }
             
-            return Tasks.forResult(true);
+            return Tasks.forResult(false);
         });
     }
 }

@@ -75,8 +75,6 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-
-
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/events_container"
         android:layout_width="match_parent"

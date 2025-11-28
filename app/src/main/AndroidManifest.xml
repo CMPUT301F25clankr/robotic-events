@@ -31,7 +31,7 @@
         </activity> <!-- Main list of events -->
         <activity
             android:name=".MainActivity"
-            android:exported="false" />
+            android:exported="true" />
         <activity
             android:name=".LotteryResultActivity"
             android:exported="false" /> <!-- NEW: Event details screen opened on row click -->
@@ -50,6 +50,16 @@
         <activity
             android:name=".NotificationsActivity"
             android:exported="false" />
+        <activity
+            android:name=".EventMapActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".EventGeolocationSettingsActivity"
+            android:exported="false" />
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyCW09_gCSILKiWwoKGRkO49RzFXA8W8kJc" />
     </application>
 
 </manifest>
