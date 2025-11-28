@@ -3,6 +3,9 @@ package com.example.robotic_events_test;
 import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import androidx.appcompat.app.AlertDialog;
+import android.widget.CheckBox;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -339,7 +342,7 @@ public class EventDetailActivity extends AppCompatActivity {
         String userId = auth.getCurrentUser().getUid();
 
         if (isInWaitlist) {
-            // Leave waitlist - keep existing code
+            // Leave waitlist logic remains the same
             waitlistController.leaveWaitlist(event.getId(), userId)
                     .addOnSuccessListener(success -> {
                         if (success) {
@@ -356,27 +359,67 @@ public class EventDetailActivity extends AppCompatActivity {
                         Log.e("EventDetail", "Error leaving waitlist", e);
                     });
         } else {
-            // Join waitlist - check if geolocation required
-            if (event.isGeolocationRequired()) {
-                captureLocationAndJoinWaitlist(userId);
+            // User is trying to JOIN, so check if we should show the dialog
+            SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+            boolean dontShow = prefs.getBoolean("dont_show_lottery_info", false);
+
+            if (dontShow) {
+                // If user checked "don't show again", join directly
+                proceedToJoinWaitlist();
             } else {
-                // No geolocation required, use existing join method
-                waitlistController.joinWaitlist(event.getId(), userId)
-                        .addOnSuccessListener(success -> {
-                            if (success) {
-                                isInWaitlist = true;
-                                updateButtonText();
-                                refreshWaitlistCount();
-                                Toast.makeText(this, "Added to waitlist!", Toast.LENGTH_SHORT).show();
-                            } else {
-                                Toast.makeText(this, "Failed to join waitlist", Toast.LENGTH_SHORT).show();
-                            }
-                        })
-                        .addOnFailureListener(e -> {
-                            Toast.makeText(this, "Error joining waitlist", Toast.LENGTH_SHORT).show();
-                            Log.e("EventDetail", "Error joining waitlist", e);
-                        });
+                // Otherwise, show the informational dialog
+                showLotteryInfoDialog();
             }
+        }
+    }
+
+    /**
+     * Shows a dialog explaining the lottery process.
+     */
+    private void showLotteryInfoDialog() {
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_lottery_info, null);
+        CheckBox dontShowAgainCheckbox = dialogView.findViewById(R.id.checkbox_dont_show_again);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Lottery System Information")
+                .setView(dialogView)
+                .setPositiveButton("Join Waitlist", (dialog, which) -> {
+                    // If the "Don't show again" box is checked, save the preference
+                    if (dontShowAgainCheckbox.isChecked()) {
+                        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+                        prefs.edit().putBoolean("dont_show_lottery_info", true).apply();
+                    }
+                    // Proceed with joining the waitlist
+                    proceedToJoinWaitlist();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    /**
+     * Contains the logic to join a waitlist, either with or without geolocation.
+     */
+    private void proceedToJoinWaitlist() {
+        String userId = auth.getCurrentUser().getUid();
+
+        if (event.isGeolocationRequired()) {
+            captureLocationAndJoinWaitlist(userId);
+        } else {
+            waitlistController.joinWaitlist(event.getId(), userId)
+                    .addOnSuccessListener(success -> {
+                        if (success) {
+                            isInWaitlist = true;
+                            updateButtonText();
+                            refreshWaitlistCount();
+                            Toast.makeText(this, "Added to waitlist!", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(this, "Failed to join waitlist", Toast.LENGTH_SHORT).show();
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Error joining waitlist", Toast.LENGTH_SHORT).show();
+                        Log.e("EventDetail", "Error joining waitlist", e);
+                    });
         }
     }
 
