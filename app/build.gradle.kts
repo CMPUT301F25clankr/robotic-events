@@ -62,6 +62,10 @@ dependencies {
     implementation("androidx.navigation:navigation-ui-ktx:2.8.4")
     implementation(libs.activity)
 
+    implementation("com.google.firebase:firebase-storage:21.0.0")
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    implementation(libs.firebase.storage)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
