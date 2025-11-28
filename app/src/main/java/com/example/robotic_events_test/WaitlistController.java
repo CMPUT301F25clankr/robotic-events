@@ -27,7 +27,7 @@ public class WaitlistController {
      * Join an event's waitlist
      * Business logic: Validate inputs, create entry, add to database
      */
-    public Task<Boolean> joinWaitlist(String eventId, String userId, double latitude, double longitude) {
+    public Task<Boolean> joinWaitlist(String eventId, String userId) {
         // Validation
         if (eventId == null || eventId.isEmpty()) {
             Log.e(TAG, "Invalid eventId");
@@ -47,7 +47,7 @@ public class WaitlistController {
                     }
 
                     // Create new entry and add to database
-                    WaitlistEntry entry = new WaitlistEntry(eventId, userId, latitude, longitude);
+                    WaitlistEntry entry = new WaitlistEntry(eventId, userId);
                     return waitlistModel.addWaitlistEntry(entry)
                             .continueWithTask(addTask -> {
                                 if (addTask.isSuccessful()) {
@@ -87,6 +87,11 @@ public class WaitlistController {
                 }
                 
                 // 2. Milestones: 25%, 50%, 75%, 100% (Capacity reached)
+                // We need to be careful not to spam. A simple way is to check if the count EXACTLY hits the threshold number.
+                // Or check if it just crossed it. 
+                // Since we increment one by one, checking equality is usually safe enough unless concurrent writes skip it.
+                // However, floating point math might be tricky. Let's use integer thresholds.
+
                 int threshold25 = (int) Math.ceil(capacity * 0.25);
                 int threshold50 = (int) Math.ceil(capacity * 0.50);
                 int threshold75 = (int) Math.ceil(capacity * 0.75);
@@ -122,7 +127,12 @@ public class WaitlistController {
                 .addOnFailureListener(e -> Log.e(TAG, "Failed to send notification", e));
     }
 
+    /**
+     * Leave an event's waitlist
+     * Business logic: Validate inputs, remove from database
+     */
     public Task<Boolean> leaveWaitlist(String eventId, String userId) {
+        // Validation
         if (eventId == null || eventId.isEmpty()) {
             Log.e(TAG, "Invalid eventId");
             return Tasks.forResult(false);
@@ -132,6 +142,7 @@ public class WaitlistController {
             return Tasks.forResult(false);
         }
 
+        // Remove from database
         return waitlistModel.removeWaitlistEntry(eventId, userId)
                 .continueWith(task -> {
                     if (task.isSuccessful()) {
@@ -144,18 +155,32 @@ public class WaitlistController {
                 });
     }
 
+    /**
+     * Check if user is in waitlist
+     */
     public Task<Boolean> isUserInWaitlist(String eventId, String userId) {
         return waitlistModel.waitlistEntryExists(eventId, userId);
     }
 
+    /**
+     * Get waitlist count for an event
+     */
     public Task<Integer> getWaitlistCount(String eventId) {
         return waitlistModel.countWaitlistEntries(eventId);
     }
 
+    /**
+     * Get all users in an event's waitlist
+     * (For organizers to view)
+     */
     public Task<List<WaitlistEntry>> getEventWaitlist(String eventId) {
         return waitlistModel.getWaitlistEntriesByEvent(eventId);
     }
 
+    /**
+     * Get all events a user has joined
+     * (For user profile "My Waitlisted Events")
+     */
     public Task<List<WaitlistEntry>> getUserWaitlists(String userId) {
         return waitlistModel.getWaitlistEntriesByUser(userId);
     }
