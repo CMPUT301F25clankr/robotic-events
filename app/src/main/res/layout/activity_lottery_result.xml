@@ -42,6 +42,23 @@
                 android:minHeight="100dp" />
 
             <TextView
+                android:id="@+id/declinedCountText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Declined Users"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:paddingTop="16dp"
+                android:paddingBottom="8dp"
+                android:textColor="@android:color/holo_orange_dark" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerDeclinedUsers"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="100dp" />
+
+            <TextView
                 android:id="@+id/notSelectedCountText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

@@ -22,8 +22,10 @@ public class LotteryResultActivity extends AppCompatActivity {
 
     private TextView selectedCountText;
     private TextView notSelectedCountText;
+    private TextView declinedCountText; // NEW
     private RecyclerView selectedUsersRecycler;
     private RecyclerView notSelectedUsersRecycler;
+    private RecyclerView declinedUsersRecycler; // NEW
 
     private LotteryController lotteryController;
     private UserModel userModel;
@@ -48,11 +50,15 @@ public class LotteryResultActivity extends AppCompatActivity {
         // Initialize views
         selectedCountText = findViewById(R.id.selectedCountText);
         notSelectedCountText = findViewById(R.id.notSelectedCountText);
+        declinedCountText = findViewById(R.id.declinedCountText); // NEW
+        
         selectedUsersRecycler = findViewById(R.id.recyclerSelectedUsers);
         notSelectedUsersRecycler = findViewById(R.id.recyclerNotSelectedUsers);
+        declinedUsersRecycler = findViewById(R.id.recyclerDeclinedUsers); // NEW
 
         selectedUsersRecycler.setLayoutManager(new LinearLayoutManager(this));
         notSelectedUsersRecycler.setLayoutManager(new LinearLayoutManager(this));
+        declinedUsersRecycler.setLayoutManager(new LinearLayoutManager(this)); // NEW
 
         lotteryController = new LotteryController();
         userModel = new UserModel();
@@ -80,12 +86,14 @@ public class LotteryResultActivity extends AppCompatActivity {
                     LotteryResult latest = results.get(0);
 
                     // Update counts
-                    selectedCountText.setText("Selected Winners (" + latest.getSelectedUserIds().size() + ")");
-                    notSelectedCountText.setText("Not Selected (" + latest.getNotSelectedUserIds().size() + ")");
+                    selectedCountText.setText("Selected Winners (" + (latest.getSelectedUserIds() != null ? latest.getSelectedUserIds().size() : 0) + ")");
+                    notSelectedCountText.setText("Not Selected (" + (latest.getNotSelectedUserIds() != null ? latest.getNotSelectedUserIds().size() : 0) + ")");
+                    declinedCountText.setText("Declined Users (" + (latest.getDeclinedUserIds() != null ? latest.getDeclinedUserIds().size() : 0) + ")"); // NEW
 
-                    // Load user details for selected and not selected
+                    // Load user details for selected, not selected, and declined
                     loadUsers(latest.getSelectedUserIds(), selectedUsersRecycler);
                     loadUsers(latest.getNotSelectedUserIds(), notSelectedUsersRecycler);
+                    loadUsers(latest.getDeclinedUserIds(), declinedUsersRecycler); // NEW
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(this, "Failed to load results: " + e.getMessage(), Toast.LENGTH_SHORT).show();

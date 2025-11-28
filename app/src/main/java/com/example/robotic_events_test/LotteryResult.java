@@ -1,6 +1,7 @@
 package com.example.robotic_events_test;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -13,9 +14,11 @@ public class LotteryResult implements Serializable {
     private long runAt;             // Timestamp
     private List<String> selectedUserIds;   // Chosen attendees
     private List<String> notSelectedUserIds; // Others in waitlist at that time
+    private List<String> declinedUserIds; // Users who declined the invitation
 
     public LotteryResult() {
         // Required for Firestore
+        this.declinedUserIds = new ArrayList<>();
     }
 
     public LotteryResult(String eventId, String organizerId,
@@ -25,6 +28,7 @@ public class LotteryResult implements Serializable {
         this.organizerId = organizerId;
         this.selectedUserIds = selectedUserIds;
         this.notSelectedUserIds = notSelectedUserIds;
+        this.declinedUserIds = new ArrayList<>();
         this.runAt = System.currentTimeMillis();
     }
 
@@ -45,4 +49,7 @@ public class LotteryResult implements Serializable {
 
     public List<String> getNotSelectedUserIds() { return notSelectedUserIds; }
     public void setNotSelectedUserIds(List<String> notSelectedUserIds) { this.notSelectedUserIds = notSelectedUserIds; }
+
+    public List<String> getDeclinedUserIds() { return declinedUserIds; }
+    public void setDeclinedUserIds(List<String> declinedUserIds) { this.declinedUserIds = declinedUserIds; }
 }
