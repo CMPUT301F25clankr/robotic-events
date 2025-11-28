@@ -288,4 +288,51 @@ public class LotteryController {
             });
         });
     }
+
+    /**
+     * Handle logic when a user accepts a spot.
+     * 1. Update LotteryResult to track the user as accepted.
+     *
+     * @param eventId  The event ID
+     * @param acceptedUserId The ID of the user who accepted
+     * @return Task<Boolean> indicating success
+     */
+    public Task<Boolean> processAccept(String eventId, String acceptedUserId) {
+        if (eventId == null || acceptedUserId == null) {
+            return Tasks.forResult(false);
+        }
+
+        // Fetch and UPDATE the LotteryResult
+        return lotteryModel.getLatestLotteriesForEvent(eventId).continueWithTask(lotteryTask -> {
+            List<LotteryResult> lotteries = lotteryTask.getResult();
+            if (lotteries == null || lotteries.isEmpty()) {
+                 Log.e(TAG, "No lottery result found to update.");
+                 return Tasks.forResult(false);
+            }
+            
+            LotteryResult lastResult = lotteries.get(0);
+            List<String> selectedIds = lastResult.getSelectedUserIds();
+            List<String> acceptedIds = lastResult.getAcceptedUserIds();
+            if (acceptedIds == null) acceptedIds = new ArrayList<>();
+            
+            // Move user from selected (pending) to accepted
+            if (selectedIds != null && selectedIds.contains(acceptedUserId)) {
+                selectedIds.remove(acceptedUserId);
+            }
+            if (!acceptedIds.contains(acceptedUserId)) {
+                acceptedIds.add(acceptedUserId);
+            }
+            
+            lastResult.setSelectedUserIds(selectedIds);
+            lastResult.setAcceptedUserIds(acceptedIds);
+            
+            // SAVE updated LotteryResult
+            String docId = lastResult.getId();
+            if (docId != null) {
+                return db.collection("lotteries").document(docId).set(lastResult).continueWith(t -> true);
+            }
+            
+            return Tasks.forResult(true);
+        });
+    }
 }

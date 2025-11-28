@@ -83,14 +83,20 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
                         .setTitle("Accept Invitation")
                         .setMessage("Are you sure you want to accept this invitation?")
                         .setPositiveButton("Yes", (dialog, which) -> {
-                            // Accept Logic: Remove from waitlist (treated as "moved to attendees" implicitly)
+                            // Accept Logic: 
+                            // 1. Remove from waitlist (treated as "moved to attendees" implicitly)
+                            // 2. Update LotteryResult to track as ACCEPTED.
                             String eventId = notification.getEventId();
                             String userId = notification.getReceiverId(); // The current user
                             
                             waitlistController.leaveWaitlist(eventId, userId)
                                     .addOnSuccessListener(aBoolean -> {
-                                        Toast.makeText(context, "Invitation Accepted", Toast.LENGTH_SHORT).show();
-                                        deleteNotification(notification, position);
+                                        // NEW: Call processAccept to update LotteryResult
+                                        lotteryController.processAccept(eventId, userId)
+                                                .addOnSuccessListener(success -> {
+                                                    Toast.makeText(context, "Invitation Accepted", Toast.LENGTH_SHORT).show();
+                                                    deleteNotification(notification, position);
+                                                });
                                     });
                         })
                         .setNegativeButton("No", null)
