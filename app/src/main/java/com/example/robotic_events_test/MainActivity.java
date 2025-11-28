@@ -19,7 +19,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 
@@ -123,6 +122,12 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadEventsFromFirestore() {
         EventModel eventModel = new EventModel();
+
+        // Safety check: Ensure user is logged in before accessing UID
+        if (auth.getCurrentUser() == null) {
+            // This should theoretically not happen due to onCreate check, but safe to return
+            return;
+        }
         
         // Filter logic: 
         // If Organizer: Show only their own events.
@@ -133,7 +138,7 @@ public class MainActivity extends AppCompatActivity {
             eventListener = eventModel.addOrganizerEventsListener(currentUserId, (value, error) -> {
                 if (error != null) {
                     Log.e("MainActivity", "Listen failed.", error);
-                    Toast.makeText(this, "Error loading events", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Error loading events: " + error.getMessage(), Toast.LENGTH_SHORT).show();
                     return;
                 }
                 
@@ -150,7 +155,7 @@ public class MainActivity extends AppCompatActivity {
             eventListener = eventModel.addEventsListener((value, error) -> {
                 if (error != null) {
                     Log.e("MainActivity", "Listen failed.", error);
-                    Toast.makeText(this, "Error loading events", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Error loading events: " + error.getMessage(), Toast.LENGTH_SHORT).show();
                     return;
                 }
                 

@@ -1,6 +1,7 @@
 package com.example.robotic_events_test;
 
 import android.content.Context;
+import android.os.CountDownTimer;
 import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -59,6 +60,24 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
             holder.actionButtonsLayout.setVisibility(View.VISIBLE);
             holder.dismissButton.setVisibility(View.GONE);
 
+            // Check for expiration if it's a pending invite
+            if (notification.getExpiryTimestamp() > 0) {
+                long timeLeft = notification.getExpiryTimestamp() - System.currentTimeMillis();
+                if (timeLeft > 0) {
+                    startCountDown(holder.expiryText, timeLeft, notification, position);
+                    holder.expiryText.setVisibility(View.VISIBLE);
+                } else {
+                    holder.expiryText.setText("Expired");
+                    holder.expiryText.setVisibility(View.VISIBLE);
+                    // Disable actions if expired?
+                    holder.acceptButton.setEnabled(false);
+                    holder.declineButton.setEnabled(false);
+                    // Ideally we should also auto-decline on server side or here.
+                }
+            } else {
+                holder.expiryText.setVisibility(View.GONE);
+            }
+
             holder.acceptButton.setOnClickListener(v -> {
                 new AlertDialog.Builder(context)
                         .setTitle("Accept Invitation")
@@ -106,6 +125,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
         } else {
             holder.actionButtonsLayout.setVisibility(View.GONE);
             holder.dismissButton.setVisibility(View.VISIBLE);
+            holder.expiryText.setVisibility(View.GONE);
 
             holder.dismissButton.setOnClickListener(v -> {
                 deleteNotification(notification, position);
@@ -113,42 +133,38 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
         }
     }
 
+    private void startCountDown(TextView textView, long millisInFuture, Notifications notification, int position) {
+        // Cancel previous timer if any (requires keeping reference, tricky in RecyclerView)
+        // For simplicity, we just start a new one. 
+        // Ideally, ViewHolder should manage its timer to avoid leaks on scroll.
+        
+        new CountDownTimer(millisInFuture, 1000) {
+            public void onTick(long millisUntilFinished) {
+                // Convert to readable format
+                long seconds = millisUntilFinished / 1000;
+                long minutes = seconds / 60;
+                long hours = minutes / 60;
+                
+                String timeString = String.format("%02d:%02d:%02d", hours, minutes % 60, seconds % 60);
+                textView.setText("Expires in: " + timeString);
+            }
+
+            public void onFinish() {
+                textView.setText("Expired");
+                // Auto-decline logic could be triggered here
+            }
+        }.start();
+    }
+
     private void deleteNotification(Notifications notification, int position) {
         if (notification.getId() != null) {
-            // Optimistically remove from list to fix "disappear right away" issue
-            // Check bounds to avoid crashes if rapid clicks happen
-            if (position >= 0 && position < notifications.size()) {
-                // Note: notifications.remove(position) might mismatch if list changed in background.
-                // Safer to remove by object or just rely on the fact that we are in onBind logic?
-                // No, position is stale if adapter is modified.
-                // However, for immediate feedback:
-                // We should probably not remove it manually if we rely on SnapshotListener, 
-                // BUT the user complained about lag. 
-                // Removing it here + notifying adapter will hide it.
-                // When SnapshotListener fires, it will just confirm the new state.
-                
-                // Actually, if we remove it here, and then SnapshotListener fires with the "REMOVED" event,
-                // we need to ensure we don't double remove or crash.
-                // Since `NotificationsActivity` clears and refills the list on snapshot, it should be fine.
-                // But wait, `NotificationsActivity` uses `notificationsList` which IS `notifications` here (same reference passed in constructor).
-                // So if we modify it here, the Activity's list is modified.
-                
-                // Let's just rely on DB delete callback for safety, but to make it "instant", we can hide the view?
-                // Or just notify item removed.
-                
-                db.collection("notifications").document(notification.getId())
+            db.collection("notifications").document(notification.getId())
                     .delete()
                     .addOnSuccessListener(aVoid -> {
-                         // Success. SnapshotListener in Activity will likely fire and refresh the list.
-                         // If we want it FASTER, we could suppress it here.
-                         // But usually Firestore local writes are instant. 
-                         // The issue might be `NotificationsActivity` waiting for server confirmation?
-                         // No, Firestore defaults to optimistic UI.
                     })
                     .addOnFailureListener(e -> {
                         Toast.makeText(context, "Error deleting notification", Toast.LENGTH_SHORT).show();
                     });
-            }
         } else {
             Toast.makeText(context, "Cannot delete: Notification ID missing", Toast.LENGTH_SHORT).show();
         }
@@ -162,6 +178,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView messageText;
         TextView timestampText;
+        TextView expiryText; // NEW
         LinearLayout actionButtonsLayout;
         Button acceptButton;
         Button declineButton;
@@ -171,6 +188,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
             super(itemView);
             messageText = itemView.findViewById(R.id.notification_message);
             timestampText = itemView.findViewById(R.id.notification_timestamp);
+            expiryText = itemView.findViewById(R.id.notification_expiry); // NEW
             actionButtonsLayout = itemView.findViewById(R.id.action_buttons_layout);
             acceptButton = itemView.findViewById(R.id.btn_accept);
             declineButton = itemView.findViewById(R.id.btn_decline);

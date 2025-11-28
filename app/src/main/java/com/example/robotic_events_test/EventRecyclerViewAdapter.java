@@ -3,16 +3,16 @@ package com.example.robotic_events_test;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
-import android.util.Log;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
+import com.bumptech.glide.Glide;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -46,6 +46,14 @@ public class EventRecyclerViewAdapter extends RecyclerView.Adapter<EventRecycler
         holder.eventLocation.setText(event.getLocation());
         holder.eventDateTime.setText(dateFormatter.format(new Date(event.getDateTime())));
 
+        // Use Glide to load the event icon
+        String imageUrl = TextUtils.isEmpty(event.getImageUrl()) ? Constants.DEFAULT_EVENT_ICON_URL : event.getImageUrl();
+        Glide.with(context)
+                .load(imageUrl)
+                .placeholder(R.drawable.ic_launcher_background) // A default placeholder
+                .error(Constants.DEFAULT_EVENT_ICON_URL) // Fallback on error
+                .into(holder.eventImage);
+
         if (isOrganizer) {
             holder.eventRowRoot.setBackgroundColor(Color.parseColor("#E8EAF6"));
             holder.eventTitle.setTextColor(Color.parseColor("#1565C0"));
@@ -65,6 +73,7 @@ public class EventRecyclerViewAdapter extends RecyclerView.Adapter<EventRecycler
     public static class ViewHolder extends RecyclerView.ViewHolder {
         LinearLayout eventRowRoot;
         TextView eventTitle, eventLocation, eventDateTime;
+        ImageView eventImage; // Add ImageView reference
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -72,17 +81,15 @@ public class EventRecyclerViewAdapter extends RecyclerView.Adapter<EventRecycler
             eventTitle = itemView.findViewById(R.id.eventTitle);
             eventLocation = itemView.findViewById(R.id.eventLocation);
             eventDateTime = itemView.findViewById(R.id.eventDateTime);
+            eventImage = itemView.findViewById(R.id.eventImage); // Find the ImageView
         }
 
         public void bind(Event event, Context context) {
-            // Set click listener on the eventRowRoot instead of itemView
             eventRowRoot.setOnClickListener(v -> {
                 Intent intent = new Intent(context, EventDetailActivity.class);
                 intent.putExtra("event", event);
                 context.startActivity(intent);
             });
         }
-
-
     }
 }

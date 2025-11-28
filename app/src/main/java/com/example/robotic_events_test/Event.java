@@ -3,15 +3,9 @@ package com.example.robotic_events_test;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import java.io.Serializable;
 
 public class Event implements Serializable {
-    // Rest of your code stays the same
-
-
     private String id;
     private String title;
     private String description;
@@ -21,13 +15,16 @@ public class Event implements Serializable {
     private String organizerId;
     private int totalCapacity;
     private String status;
-    private String imageUrl;
+    private String imageUrl; // This will be the icon
+    private String bannerUrl; // This is the new banner
     private double price;
 
+    private boolean geolocationRequired;
+    private double eventLatitude;
+    private double eventLongitude;
     public Event() {
         // Firestore requires a public no-argument constructor
     }
-
 
     public Event(
             @NonNull String title,
@@ -35,11 +32,11 @@ public class Event implements Serializable {
             long dateTime,
             int totalCapacity,
             double price,
-
             @Nullable String description,
             @Nullable String category,
             @Nullable String organizerId,
-            @Nullable String imageUrl
+            @Nullable String imageUrl,
+            @Nullable String bannerUrl // Add bannerUrl to constructor
     ) {
         this.id = null; // ID is set by Firestore
         this.title = title;
@@ -50,10 +47,15 @@ public class Event implements Serializable {
         this.category = category;
         this.organizerId = organizerId;
         this.imageUrl = imageUrl;
+        this.bannerUrl = bannerUrl; // Assign bannerUrl
         this.price = price;
         this.status = "open";
+        this.geolocationRequired = false;
+        this.eventLatitude = 0.0;
+        this.eventLongitude = 0.0;
     }
 
+    // --- Existing Getters and Setters ---
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
     public String getTitle() { return title; }
@@ -76,6 +78,13 @@ public class Event implements Serializable {
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public double getPrice() { return price; }
     public void setPrice(double price) { this.price = price; }
+    public boolean isGeolocationRequired() { return geolocationRequired; }
+    public void setGeolocationRequired(boolean geolocationRequired) { this.geolocationRequired = geolocationRequired; }
+    public double getEventLatitude() { return eventLatitude; }
+    public void setEventLatitude(double eventLatitude) { this.eventLatitude = eventLatitude; }
+    public double getEventLongitude() { return eventLongitude; }
+    public void setEventLongitude(double eventLongitude) { this.eventLongitude = eventLongitude; }
 
-
+    public String getBannerUrl() { return bannerUrl; }
+    public void setBannerUrl(String bannerUrl) { this.bannerUrl = bannerUrl; }
 }

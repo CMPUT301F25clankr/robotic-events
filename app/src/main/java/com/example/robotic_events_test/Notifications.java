@@ -10,6 +10,7 @@ public class Notifications {
     private String receiverId;
     private long timestamp;
     private String eventId;
+    private long expiryTimestamp; // NEW: Time when the invitation expires
 
     public Notifications() {
         // Required for Firestore
@@ -22,6 +23,7 @@ public class Notifications {
         this.receiverId = receiverId;
         this.timestamp = timestamp;
         this.eventId = eventId;
+        this.expiryTimestamp = 0;
     }
 
     @Exclude
@@ -79,5 +81,13 @@ public class Notifications {
 
     public void setEventId(String eventId) {
         this.eventId = eventId;
+    }
+
+    public long getExpiryTimestamp() {
+        return expiryTimestamp;
+    }
+
+    public void setExpiryTimestamp(long expiryTimestamp) {
+        this.expiryTimestamp = expiryTimestamp;
     }
 }
