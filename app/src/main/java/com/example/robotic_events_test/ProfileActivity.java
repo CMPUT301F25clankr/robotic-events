@@ -1,6 +1,7 @@
 package com.example.robotic_events_test;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
@@ -81,6 +82,9 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void logout() {
+        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+        prefs.edit().remove("dont_show_lottery_info").apply();
+
         auth.signOut();
         finish();
         startActivity(new Intent(this, LoginActivity.class));

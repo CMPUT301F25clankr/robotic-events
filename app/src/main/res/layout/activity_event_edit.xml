@@ -1,57 +1,104 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:fillViewport="true">
 
-    <!-- All fields are identical to activity_event_creation.xml, new delete butt. -->
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/eventEditToolbar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        app:title="Edit Event" />
-
-    <EditText
-        android:id="@+id/eventTitleEditor"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Event Name" />
+        android:orientation="vertical"
+        android:padding="16dp">
 
-    <EditText
-        android:id="@+id/eventCapacityEditor"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:inputType="number"
-        android:hint="Capacity" />
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/eventEditToolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:title="Edit Event" />
 
-    <DatePicker
-        android:id="@+id/eventDatePickerEditor"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:calendarViewShown="false"
-        android:datePickerMode="spinner" />
+        <EditText
+            android:id="@+id/eventTitleEditor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Event Name" />
 
-    <TimePicker
-        android:id="@+id/eventTimePickerEditor"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:timePickerMode="spinner" />
+        <!-- Icon URL and Upload Button -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Icon Image URL"
+            android:layout_marginTop="16dp"/>
+        <EditText
+            android:id="@+id/eventIconUrlEditor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="https://example.com/icon.jpg" />
+        <Button
+            android:id="@+id/uploadIconButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Upload Icon" />
 
-    <Button
-        android:id="@+id/eventSaveChangesConfirm"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Save Changes" />
+        <!-- Banner URL and Upload Button -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Banner Image URL"
+            android:layout_marginTop="16dp"/>
+        <EditText
+            android:id="@+id/eventBannerUrlEditor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="https://example.com/banner.jpg" />
+        <Button
+            android:id="@+id/uploadBannerButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Upload Banner" />
 
-    <Button
-        android:id="@+id/eventDeleteConfirm"
-        style="?attr/materialButtonOutlinedStyle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Delete Event"
-        android:textColor="@android:color/holo_red_dark" />
+        <EditText
+            android:id="@+id/eventCapacityEditor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:layout_marginTop="16dp"
+            android:hint="Capacity" />
 
-</LinearLayout>
+        <DatePicker
+            android:id="@+id/eventDatePickerEditor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:calendarViewShown="false"
+            android:datePickerMode="spinner" />
+
+        <TimePicker
+            android:id="@+id/eventTimePickerEditor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:timePickerMode="spinner" />
+
+        <ProgressBar
+            android:id="@+id/editEventProgressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone"/>
+
+        <Button
+            android:id="@+id/eventSaveChangesConfirm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Save Changes" />
+
+        <Button
+            android:id="@+id/eventDeleteConfirm"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Delete Event"
+            android:textColor="@android:color/holo_red_dark" />
+
+    </LinearLayout>
+</ScrollView>
