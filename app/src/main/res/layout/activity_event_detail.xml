@@ -37,7 +37,21 @@
                 android:text="View Lottery Results"
                 android:visibility="gone" />
 
+            <Button
+                android:id="@+id/viewMapButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="View Waitlist Map"
+                android:visibility="gone"
+                android:layout_margin="8dp" />
 
+            <Button
+                android:id="@+id/geolocationSettingsButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Geolocation Settings"
+                android:visibility="gone"
+                android:layout_margin="8dp" />
 
             <Button
                 android:id="@+id/runLotteryButton"

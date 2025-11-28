@@ -24,6 +24,8 @@ import com.google.zxing.WriterException;
 import com.journeyapps.barcodescanner.BarcodeEncoder;
 
 import java.util.Objects;
+import android.content.pm.PackageManager;
+import androidx.core.app.ActivityCompat;
 
 /**
  * VIEW: Displays event details and handles user interactions
@@ -126,7 +128,27 @@ public class EventDetailActivity extends AppCompatActivity {
                 // Show dialog
                 dialog.show();
             });
+            //geolocation stuff
+            Button viewMapButton = findViewById(R.id.viewMapButton);
+            Button geolocationSettingsButton = findViewById(R.id.geolocationSettingsButton);
 
+            if (isOrganizer) {
+                viewMapButton.setVisibility(View.VISIBLE);
+                viewMapButton.setOnClickListener(v -> {
+                    Intent intent = new Intent(this, EventMapActivity.class);
+                    intent.putExtra("eventId", event.getId());
+                    intent.putExtra("event", event);
+                    startActivity(intent);
+                });
+
+                geolocationSettingsButton.setVisibility(View.VISIBLE);
+                geolocationSettingsButton.setOnClickListener(v -> {
+                    Intent intent = new Intent(this, EventGeolocationSettingsActivity.class);
+                    intent.putExtra("eventId", event.getId());
+                    intent.putExtra("event", event);
+                    startActivity(intent);
+                });
+            }
             runLotteryButton.setVisibility(View.VISIBLE);
             // runLotteryButton click listener is in setupButtonListeners()
 
@@ -228,12 +250,60 @@ public class EventDetailActivity extends AppCompatActivity {
         });
 
     }
+    private void captureLocationAndJoinWaitlist(String userId) {
+        LocationHelper locationHelper = new LocationHelper(this);
 
+        if (!locationHelper.hasLocationPermission()) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{LocationHelper.PERMISSION},
+                    LocationHelper.PERMISSION_REQUEST_CODE);
+            return;
+        }
+
+        locationHelper.getCurrentLocation().addOnSuccessListener(location -> {
+                    if (location != null) {
+                        LocationHelper.LocationData locData = locationHelper.extractLocationData(location, "User");
+
+                        waitlistController.joinWaitlistWithLocation(event.getId(), userId,
+                                        locData.latitude, locData.longitude, locData.locationName)
+                                .addOnSuccessListener(success -> {
+                                    if (success) {
+                                        isInWaitlist = true;
+                                        updateButtonText();
+                                        refreshWaitlistCount();
+                                        Toast.makeText(this, "Added to waitlist!", Toast.LENGTH_SHORT).show();
+                                    } else {
+                                        Toast.makeText(this, "Failed to join waitlist", Toast.LENGTH_SHORT).show();
+                                    }
+                                })
+                                .addOnFailureListener(e -> {
+                                    Toast.makeText(this, "Error joining waitlist", Toast.LENGTH_SHORT).show();
+                                    Log.e("EventDetail", "Error joining waitlist", e);
+                                });
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Could not get location", Toast.LENGTH_SHORT).show();
+                    Log.e("EventDetail", "Error getting location", e);
+                });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == LocationHelper.PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                handleWaitlistToggle();
+            } else {
+                Toast.makeText(this, "Location permission required to join", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
     private void handleWaitlistToggle() {
         String userId = auth.getCurrentUser().getUid();
 
         if (isInWaitlist) {
-            // Leave waitlist through controller
+            // Leave waitlist - keep existing code
             waitlistController.leaveWaitlist(event.getId(), userId)
                     .addOnSuccessListener(success -> {
                         if (success) {
@@ -250,22 +320,27 @@ public class EventDetailActivity extends AppCompatActivity {
                         Log.e("EventDetail", "Error leaving waitlist", e);
                     });
         } else {
-            // Join waitlist through controller
-            waitlistController.joinWaitlist(event.getId(), userId)
-                    .addOnSuccessListener(success -> {
-                        if (success) {
-                            isInWaitlist = true;
-                            updateButtonText();
-                            refreshWaitlistCount();
-                            Toast.makeText(this, "Added to waitlist!", Toast.LENGTH_SHORT).show();
-                        } else {
-                            Toast.makeText(this, "Failed to join waitlist", Toast.LENGTH_SHORT).show();
-                        }
-                    })
-                    .addOnFailureListener(e -> {
-                        Toast.makeText(this, "Error joining waitlist", Toast.LENGTH_SHORT).show();
-                        Log.e("EventDetail", "Error joining waitlist", e);
-                    });
+            // Join waitlist - check if geolocation required
+            if (event.isGeolocationRequired()) {
+                captureLocationAndJoinWaitlist(userId);
+            } else {
+                // No geolocation required, use existing join method
+                waitlistController.joinWaitlist(event.getId(), userId)
+                        .addOnSuccessListener(success -> {
+                            if (success) {
+                                isInWaitlist = true;
+                                updateButtonText();
+                                refreshWaitlistCount();
+                                Toast.makeText(this, "Added to waitlist!", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(this, "Failed to join waitlist", Toast.LENGTH_SHORT).show();
+                            }
+                        })
+                        .addOnFailureListener(e -> {
+                            Toast.makeText(this, "Error joining waitlist", Toast.LENGTH_SHORT).show();
+                            Log.e("EventDetail", "Error joining waitlist", e);
+                        });
+            }
         }
     }
 

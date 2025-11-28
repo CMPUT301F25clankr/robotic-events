@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -48,6 +50,16 @@
         <activity
             android:name=".NotificationsActivity"
             android:exported="false" />
+        <activity
+            android:name=".EventMapActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".EventGeolocationSettingsActivity"
+            android:exported="false" />
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyCW09_gCSILKiWwoKGRkO49RzFXA8W8kJc" />
     </application>
 
 </manifest>
