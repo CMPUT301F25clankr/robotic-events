@@ -10,6 +10,7 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.Toast;
 import android.widget.LinearLayout;
+import android.widget.ToggleButton;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
@@ -24,6 +25,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -60,12 +62,19 @@ public class MainActivity extends AppCompatActivity {
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         Button myEventsButton = findViewById(R.id.my_events_button);
         ImageButton qrButton = findViewById(R.id.qr_button);
+        ImageButton filterButton = findViewById(R.id.filter_button);
+        LinearLayout filterCols = findViewById(R.id.filter_categories);
         
         // Get the filter bar container to hide it for organizers
         ConstraintLayout filterBar = findViewById(R.id.filter_bar);
 
         SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
         isOrganizer = prefs.getBoolean("isOrganizer", false);
+
+        RecyclerView recyclerView = findViewById(R.id.events_container);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        adapter = new EventRecyclerViewAdapter(this, events, isOrganizer);
+        recyclerView.setAdapter(adapter);
 
         // Apply theme colors based on role
         if (isOrganizer) {
@@ -91,14 +100,32 @@ public class MainActivity extends AppCompatActivity {
             toolbar.setBackgroundColor(Color.parseColor("#7B1FA2")); // Purple toolbar
             myEventsButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#7B1FA2"))); // Purple button
             qrButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#7B1FA2"))); // Purple QR button
-            
+            filterButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#7B1FA2"))); // Purple QR button
+            filterBar.setBackgroundColor(Color.parseColor("#F3E5F5"));
+
             // Ensure they are visible for regular users
             qrButton.setVisibility(View.VISIBLE);
             myEventsButton.setVisibility(View.VISIBLE);
             
             if (filterBar != null) {
                 filterBar.setVisibility(View.VISIBLE);
+
+                final ArrayList<String> selectedCategories = new ArrayList<>();
+
+                setupFilter(recyclerView, selectedCategories);
+                filterCols.setVisibility(View.GONE);
             }
+
+            filterButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (filterCols.getVisibility() == View.VISIBLE) {
+                        filterCols.setVisibility(View.GONE);
+                    } else {
+                        filterCols.setVisibility(View.VISIBLE);
+                    }
+                }
+            });
         }
 
         fabAddEvent.setVisibility(isOrganizer ? View.VISIBLE : View.GONE);
@@ -110,11 +137,6 @@ public class MainActivity extends AppCompatActivity {
         notificationButton.setOnClickListener(v -> startActivity(new Intent(this, NotificationsActivity.class)));
 
         qrButton.setOnClickListener(v -> startActivity(new Intent(this, QRScanRedirect.class)));
-
-        RecyclerView recyclerView = findViewById(R.id.events_container);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new EventRecyclerViewAdapter(this, events, isOrganizer);
-        recyclerView.setAdapter(adapter);
 
         SearchView searchBar = findViewById(R.id.search_bar);
         searchBar.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -208,5 +230,63 @@ public class MainActivity extends AppCompatActivity {
         EventRecyclerViewAdapter filteredAdapter = new EventRecyclerViewAdapter(this, filteredEvents, isOrganizer);
         recyclerView.setAdapter(filteredAdapter);
         filteredAdapter.notifyDataSetChanged();
+    }
+
+    private void applyCatFilters(RecyclerView recyclerView, ArrayList<String> selectedCategories) {
+        if (selectedCategories.isEmpty()) {
+            EventRecyclerViewAdapter adapter = new EventRecyclerViewAdapter(this, events, isOrganizer);
+            recyclerView.setAdapter(adapter);
+            adapter.notifyDataSetChanged();
+            return;
+        }
+
+        ArrayList<Event> filteredEvents = new ArrayList<>();
+        for (Event event : events) {
+            String eventCategory = event.getCategory() != null ? event.getCategory().toLowerCase() : "";
+
+            for (String cat : selectedCategories) {
+                if (eventCategory.contains(cat.toLowerCase())) {
+                    filteredEvents.add(event);
+                    break;
+                }
+            }
+        }
+
+        EventRecyclerViewAdapter filteredAdapter = new EventRecyclerViewAdapter(this, filteredEvents, isOrganizer);
+        recyclerView.setAdapter(filteredAdapter);
+        filteredAdapter.notifyDataSetChanged();
+    }
+
+    private void setupFilter(RecyclerView recyclerView, ArrayList<String> selectedCategories) {
+        LinearLayout filterCols = findViewById(R.id.filter_categories);
+        String[] categories = {"Sports", "Art", "Food", "Games", "Community"};
+
+        for (String cat: categories) {
+            ToggleButton button = new ToggleButton(this);
+
+            button.setTextOn(cat);
+            button.setTextOff(cat);
+            button.setText(cat);
+            button.setTag(cat);
+            button.setChecked(false);
+
+            button.setPadding(12, 12, 12, 12);
+            button.setBackgroundColor(Color.BLACK);
+            button.setTextColor(Color.WHITE);
+
+            button.setOnCheckedChangeListener(((buttonView, isChecked) -> {
+                if (isChecked) {
+                    button.setBackgroundColor(Color.parseColor("#7B1FA2"));
+                    selectedCategories.add(cat);
+                } else {
+                    button.setBackgroundColor(Color.BLACK);
+                    selectedCategories.remove(cat);
+                }
+
+                applyCatFilters(recyclerView, selectedCategories);
+            }));
+
+            filterCols.addView(button);
+        }
     }
 }

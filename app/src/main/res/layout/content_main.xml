@@ -63,7 +63,7 @@
             android:id="@+id/filter_button"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:background="#EEEEEE"
+            android:background="@drawable/rounded_button"
             android:contentDescription="Filter Events"
             android:src="@drawable/ic_filter"
             android:padding="8dp"
@@ -74,6 +74,23 @@
             app:layout_constraintStart_toEndOf="@id/qr_button" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <HorizontalScrollView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/filter_categories"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            >
+
+        </LinearLayout>
+
+    </HorizontalScrollView>
+
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/events_container"
