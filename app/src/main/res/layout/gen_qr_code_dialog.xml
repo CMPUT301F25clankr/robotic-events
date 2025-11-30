@@ -23,14 +23,6 @@
             android:textSize="20dp"
             android:text="Screenshot the QR Code"/>
 
-        <ImageButton
-            android:id="@+id/qr_code_dialog_exit"
-            android:layout_marginLeft="30dp"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:src="@android:drawable/btn_dialog"
-            android:background="@color/zxing_transparent"/>
-
     </LinearLayout>
     <ImageView
         android:id="@+id/qr_code_dialog_img"

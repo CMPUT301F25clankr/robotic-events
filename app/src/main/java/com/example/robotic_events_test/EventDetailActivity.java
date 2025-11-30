@@ -17,6 +17,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
+import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -119,6 +120,8 @@ public class EventDetailActivity extends AppCompatActivity {
         }
 
         if (isOrganizer) {
+            joinLeaveWaitlistButton.setVisibility(View.GONE);
+
             fabEditEvent.setVisibility(View.VISIBLE);
             fabEditEvent.setOnClickListener(v -> {
                 Intent intent = new Intent(this, EventEditActivity.class);
@@ -128,7 +131,7 @@ public class EventDetailActivity extends AppCompatActivity {
 
             fabGenQr.setVisibility(View.VISIBLE);
             fabGenQr.setOnClickListener(v -> {
-                // Generate QR Code stuff
+                // Generate QR Code on click; create and display dialog
                 // Create dialog
                 Dialog dialog = new Dialog(this);
                 dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -147,6 +150,7 @@ public class EventDetailActivity extends AppCompatActivity {
                 // Show dialog
                 dialog.show();
             });
+
             //geolocation stuff
             Button viewMapButton = findViewById(R.id.viewMapButton);
             Button geolocationSettingsButton = findViewById(R.id.geolocationSettingsButton);
