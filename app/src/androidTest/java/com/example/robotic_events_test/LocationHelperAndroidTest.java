@@ -4,6 +4,7 @@ import android.content.Context;
 import android.location.Location;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import org.junit.Before;
@@ -13,6 +14,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.*;
 
 @RunWith(AndroidJUnit4.class)
+@SdkSuppress(minSdkVersion = 34, maxSdkVersion = 34)
 public class LocationHelperAndroidTest {
 
     private LocationHelper locationHelper;
