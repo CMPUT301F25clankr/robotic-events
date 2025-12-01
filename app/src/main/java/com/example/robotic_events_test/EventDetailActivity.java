@@ -3,6 +3,7 @@ package com.example.robotic_events_test;
 import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -20,6 +21,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
 import com.journeyapps.barcodescanner.BarcodeEncoder;
@@ -43,9 +46,11 @@ public class EventDetailActivity extends AppCompatActivity {
     private WaitlistController waitlistController;  // CONTROLLER
     private boolean isInWaitlist = false;
     private boolean isOrganizer = false;
+    private boolean isAdmin = false;
 
     // UI Elements
     private Button joinLeaveWaitlistButton;
+    private Button removeEventButton;
     private TextView detailWaitlist;
     private TextView registrationDeadlineText;
     private CountDownTimer deadlineTimer;
@@ -73,6 +78,10 @@ public class EventDetailActivity extends AppCompatActivity {
         if (auth.getCurrentUser() != null) {
             isOrganizer = event.getOrganizerId().equals(auth.getCurrentUser().getUid());
         }
+
+        //checks if user is admin
+        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+        isAdmin = prefs.getBoolean("isAdmin", false);
 
         // Setup Toolbar
         MaterialToolbar toolbar = findViewById(R.id.eventDetailToolbar);
@@ -106,11 +115,21 @@ public class EventDetailActivity extends AppCompatActivity {
         detailWaitlist = findViewById(R.id.detailWaitlist);
         joinLeaveWaitlistButton = findViewById(R.id.joinLeaveWaitlistButton);
         registrationDeadlineText = findViewById(R.id.registrationDeadlineText);
+        removeEventButton = findViewById(R.id.removeEventButton);
 
         FloatingActionButton fabEditEvent = findViewById(R.id.fab_edit_event);
         FloatingActionButton fabGenQr = findViewById(R.id.gen_qr_code);
         runLotteryButton = findViewById(R.id.runLotteryButton);
         Button viewLotteryResultsButton = findViewById(R.id.viewLotteryResultsButton);
+
+
+        if (isAdmin) {
+            joinLeaveWaitlistButton.setVisibility(View.GONE);
+            removeEventButton.setVisibility(View.VISIBLE);
+        } else {
+            joinLeaveWaitlistButton.setVisibility(View.VISIBLE);
+            removeEventButton.setVisibility(View.GONE);
+        }
 
         // Show edit FAB and lottery buttons only if user is organizer
         if (isOrganizer) {
@@ -313,6 +332,8 @@ public class EventDetailActivity extends AppCompatActivity {
             
             handleWaitlistToggle();
         });
+
+        removeEventButton.setOnClickListener(v -> removeEvent());
         runLotteryButton.setOnClickListener(v -> {
             if (!isOrganizer) {
                 Toast.makeText(this, "Only the organizer can run the lottery", Toast.LENGTH_SHORT).show();
@@ -345,6 +366,34 @@ public class EventDetailActivity extends AppCompatActivity {
         });
 
     }
+
+    //Admin deletes events and associated waitlists
+    private void removeEvent() {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        String eventId = event.getId();
+
+        db.collection("waitlists").whereEqualTo("eventId", eventId).get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        document.getReference().delete();
+                    }
+
+                    db.collection("events").document(eventId).delete()
+                            .addOnSuccessListener(aVoid -> {
+                                Toast.makeText(this, "Event removed successfully", Toast.LENGTH_SHORT).show();
+                                finish();
+                            })
+                            .addOnFailureListener(e -> {
+                                Toast.makeText(this, "Error removing event", Toast.LENGTH_SHORT).show();
+                                Log.e("EventDetailActivity", "Error removing event", e);
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Error cleaning up waitlist", Toast.LENGTH_SHORT).show();
+                    Log.e("EventDetailActivity", "Error cleaning up waitlist", e);
+                });
+    }
+
     private void captureLocationAndJoinWaitlist(String userId) {
         LocationHelper locationHelper = new LocationHelper(this);
 
