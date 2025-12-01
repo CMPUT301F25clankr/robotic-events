@@ -25,7 +25,6 @@ public class GeolocationTest {
 
     @Before
     public void grantPermissions() {
-        // Manually grant permissions since androidx.test.rules is missing
         InstrumentationRegistry.getInstrumentation().getUiAutomation().executeShellCommand(
                 "pm grant " + InstrumentationRegistry.getInstrumentation().getTargetContext().getPackageName()
                         + " android.permission.ACCESS_FINE_LOCATION");
@@ -36,10 +35,8 @@ public class GeolocationTest {
 
     @Test
     public void testEventGeolocationSettingsLaunch() {
-        // Launch EventGeolocationSettingsActivity directly
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), EventGeolocationSettingsActivity.class);
         
-        // Need to pass a valid Event object since the activity expects it
         Event dummyEvent = new Event();
         dummyEvent.setId("test_event_id");
         dummyEvent.setTitle("Test Geo Event");
@@ -48,19 +45,15 @@ public class GeolocationTest {
         intent.putExtra("event", dummyEvent);
         
         try (ActivityScenario<EventGeolocationSettingsActivity> scenario = ActivityScenario.launch(intent)) {
-            // Placeholder verification - checks if content view is visible
             onView(withId(android.R.id.content)).check(matches(isDisplayed()));
         }
     }
     
     @Test
     public void testLocationHelper() {
-        // Unit test style check for LocationHelper within instrumentation
         Context context = ApplicationProvider.getApplicationContext();
         LocationHelper helper = new LocationHelper(context);
-        
-        // Since we granted permissions via UiAutomation, this should be true
-        // Note: Permissions might take a moment to propagate, but usually immediate via shell
+
         assert(helper.hasLocationPermission());
     }
 }
