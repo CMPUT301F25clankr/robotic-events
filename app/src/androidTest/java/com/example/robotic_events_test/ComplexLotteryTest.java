@@ -161,8 +161,9 @@ public class ComplexLotteryTest {
     }
 
     private void signup(String email, String password, boolean isOrganizer) throws InterruptedException {
-        // Assuming we are on Login Screen. 
-        // If not (e.g., ensureLoggedOut failed?), this will fail.
+        // Give time for Login screen to settle if we just logged out
+        Thread.sleep(2000); 
+        
         onView(withId(R.id.signupButton)).perform(click());
         Thread.sleep(1000); 
         
@@ -180,6 +181,9 @@ public class ComplexLotteryTest {
     }
 
     private void login(String email, String password) throws InterruptedException {
+        // Give time for Login screen to settle
+        Thread.sleep(2000);
+        
         onView(withId(R.id.emailInput)).perform(replaceText(email), closeSoftKeyboard());
         onView(withId(R.id.passwordInput)).perform(replaceText(password), closeSoftKeyboard());
         onView(withId(R.id.loginButton)).perform(click());

@@ -125,6 +125,8 @@ public class LotteryRejectionTest {
         // Since we don't know which user won, checking for existence is enough to prove the system works.
         // But ideally we match text.
         // We can match for "selected" as both messages contain it.
+        // "Congratulations! You have been selected..."
+        // "Unfortunately, you were not selected..."
         onView(withText(containsString("selected"))).check(matches(isDisplayed()));
         
         androidx.test.espresso.Espresso.pressBack(); 

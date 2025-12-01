@@ -8,11 +8,25 @@ public class EventTest {
 
     private Event event;
     private long timestamp;
+    private long deadline;
 
     @Before
     public void setUp() {
         timestamp = System.currentTimeMillis();
-        event = new Event("Test Event", "Test Location", timestamp, 100, 50.0, "Test Description", "Test Category", "organizer123", "http://image.url");
+        deadline = timestamp + 86400000; // 1 day later
+        event = new Event(
+                "Test Event", 
+                "Test Location", 
+                timestamp, 
+                100, 
+                50.0, 
+                "Test Description", 
+                "Test Category", 
+                "organizer123", 
+                "http://image.url/icon",
+                "http://image.url/banner",
+                deadline
+        );
     }
 
     @Test
@@ -25,7 +39,9 @@ public class EventTest {
         assertEquals("Test Description", event.getDescription());
         assertEquals("Test Category", event.getCategory());
         assertEquals("organizer123", event.getOrganizerId());
-        assertEquals("http://image.url", event.getImageUrl());
+        assertEquals("http://image.url/icon", event.getImageUrl());
+        assertEquals("http://image.url/banner", event.getBannerUrl());
+        assertEquals(deadline, event.getRegistrationDeadline());
         assertEquals("open", event.getStatus()); // Default status
     }
 
@@ -37,6 +53,8 @@ public class EventTest {
         event.setPrice(75.0);
         event.setStatus("closed");
         event.setId("event123");
+        event.setBannerUrl("newBanner");
+        event.setRegistrationDeadline(123456789L);
 
         assertEquals("New Title", event.getTitle());
         assertEquals("New Location", event.getLocation());
@@ -44,6 +62,8 @@ public class EventTest {
         assertEquals(75.0, event.getPrice(), 0.001);
         assertEquals("closed", event.getStatus());
         assertEquals("event123", event.getId());
+        assertEquals("newBanner", event.getBannerUrl());
+        assertEquals(123456789L, event.getRegistrationDeadline());
     }
 
     @Test
