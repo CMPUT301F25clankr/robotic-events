@@ -47,7 +47,6 @@ public class LoginActivity extends AppCompatActivity {
         });
 
         adminButton.setOnClickListener(v -> {
-            // Replace the Toast with an Intent to the new activity
             startActivity(new Intent(this, AdminAccessActivity.class));
         });
     }
@@ -75,33 +74,40 @@ public class LoginActivity extends AppCompatActivity {
 
         db.collection("users").document(userId).get()
                 .addOnSuccessListener(document -> {
-                    // Firestore saves isOrganizer() as "organizer" field
-                    Boolean isOrganizerObj = document.getBoolean("organizer"); // Changed from "isOrganizer"
-                    boolean isOrganizer = (isOrganizerObj != null && isOrganizerObj);
+                    Boolean isBannedObj = document.getBoolean("banned");
+                    boolean isBanned = (isBannedObj != null && isBannedObj);
 
-                    // Save role in SharedPreferences
-                    SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
-                    prefs.edit().putBoolean("isOrganizer", isOrganizer).apply();
+                    if (isBanned) {
+                        startActivity(new Intent(LoginActivity.this, BannedActivity.class));
+                        finish();
+                    } else {
+                        // For any regular user login, clear admin status
+                        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+                        SharedPreferences.Editor editor = prefs.edit();
+                        editor.putBoolean("isAdmin", false); // CRITICAL FIX: Clear admin status
 
-                    goToMain();
+                        Boolean isOrganizerObj = document.getBoolean("organizer");
+                        boolean isOrganizer = (isOrganizerObj != null && isOrganizerObj);
+                        editor.putBoolean("isOrganizer", isOrganizer);
+
+                        editor.apply(); // Apply all changes
+                        goToMain();
+                    }
                 })
                 .addOnFailureListener(e -> {
-                    // Default to user if failure occurs
+                    // If fetching fails, default to a non-admin, non-organizer user
                     SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
-                    prefs.edit().putBoolean("isOrganizer", false).apply();
+                    prefs.edit()
+                        .putBoolean("isAdmin", false)
+                        .putBoolean("isOrganizer", false)
+                        .apply();
 
                     goToMain();
                 });
     }
 
-
     private void goToMain() {
         startActivity(new Intent(LoginActivity.this, MainActivity.class));
         finish();
-    }
-
-    private void saveUserRole(boolean isOrganizer) {
-        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
-        prefs.edit().putBoolean("isOrganizer", isOrganizer).apply();
     }
 }
