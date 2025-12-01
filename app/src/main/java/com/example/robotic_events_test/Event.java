@@ -10,6 +10,7 @@ public class Event implements Serializable {
     private String title;
     private String description;
     private long dateTime;
+    private long registrationDeadline; // Added for registration deadline
     private String location;
     private String category;
     private String organizerId;
@@ -36,18 +37,20 @@ public class Event implements Serializable {
             @Nullable String category,
             @Nullable String organizerId,
             @Nullable String imageUrl,
-            @Nullable String bannerUrl // Add bannerUrl to constructor
+            @Nullable String bannerUrl,
+            long registrationDeadline // Add deadline to constructor
     ) {
         this.id = null; // ID is set by Firestore
         this.title = title;
         this.dateTime = dateTime;
+        this.registrationDeadline = registrationDeadline; // Assign deadline
         this.location = location;
         this.totalCapacity = totalCapacity;
         this.description = description;
         this.category = category;
         this.organizerId = organizerId;
         this.imageUrl = imageUrl;
-        this.bannerUrl = bannerUrl; // Assign bannerUrl
+        this.bannerUrl = bannerUrl; 
         this.price = price;
         this.status = "open";
         this.geolocationRequired = false;
@@ -64,6 +67,10 @@ public class Event implements Serializable {
     public void setDescription(String description) { this.description = description; }
     public long getDateTime() { return dateTime; }
     public void setDateTime(long dateTime) { this.dateTime = dateTime; }
+    
+    public long getRegistrationDeadline() { return registrationDeadline; }
+    public void setRegistrationDeadline(long registrationDeadline) { this.registrationDeadline = registrationDeadline; }
+    
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
     public String getCategory() { return category; }
