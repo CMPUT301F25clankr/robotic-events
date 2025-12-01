@@ -31,11 +31,6 @@ import com.google.firebase.auth.FirebaseUser;
 import java.util.Calendar;
 import java.util.Objects;
 
-/**
-* VIEW: Allows users of Organizer role to create new events. Created events are added to the DB
- * and are viewable to all users.
- * Associated with Organizer user stories.
- */
 public class EventCreationActivity extends AppCompatActivity {
 
     private static final int PICK_ICON_IMAGE_REQUEST = 1;
@@ -56,7 +51,6 @@ public class EventCreationActivity extends AppCompatActivity {
     private String chosenCategory = "General";
 
     @Override
-    // Method to initialize the page for user display.
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_event_creation);
@@ -76,14 +70,13 @@ public class EventCreationActivity extends AppCompatActivity {
         eventCreationConfirm.setOnClickListener(v -> createEvent());
     }
 
-    // Initializes references for views; calls another method to create category selection radio buttons.
     private void initializeViews() {
         eventTitleSetter = findViewById(R.id.eventTitleSetter);
         eventCapacitySetter = findViewById(R.id.eventCapacitySetter);
         eventDatePicker = findViewById(R.id.eventDatePicker);
         registrationDeadlinePicker = findViewById(R.id.registrationDeadlinePicker);
         eventTimePicker = findViewById(R.id.eventTimePicker);
-        registrationDeadlineTimePicker = findViewById(R.id.registrationDeadlineTimePicker); // Initialize TimePicker
+        registrationDeadlineTimePicker = findViewById(R.id.registrationDeadlineTimePicker);
         eventIconUrlSetter = findViewById(R.id.eventIconUrlSetter);
         eventBannerUrlSetter = findViewById(R.id.eventBannerUrlSetter);
         uploadIconButton = findViewById(R.id.uploadIconButton);
@@ -116,7 +109,6 @@ public class EventCreationActivity extends AppCompatActivity {
         }
     }
 
-    // Method to create an event object and accordingly post its information to the DB.
     private void createEvent() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
@@ -176,13 +168,13 @@ public class EventCreationActivity extends AppCompatActivity {
             );
             long dateTime = calendar.getTimeInMillis();
 
-            // Capture Registration Deadline with Time
+            // Capture Registration Deadline
             Calendar deadlineCal = Calendar.getInstance();
             deadlineCal.set(
                     registrationDeadlinePicker.getYear(),
                     registrationDeadlinePicker.getMonth(),
                     registrationDeadlinePicker.getDayOfMonth(),
-                    registrationDeadlineTimePicker.getHour(), // Use the time picker
+                    registrationDeadlineTimePicker.getHour(),
                     registrationDeadlineTimePicker.getMinute()
             );
             long registrationDeadline = deadlineCal.getTimeInMillis();
@@ -235,7 +227,6 @@ public class EventCreationActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    // Creates radio button category selection for an event. Creates a button per category.
     private void createRadioButtons(RadioGroup radioGroup) {
         String[] categories = {"Sports", "Art", "Food", "Games", "Community"};
 
