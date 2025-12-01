@@ -34,6 +34,11 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Objects;
 
+/**
+ * VIEW: Main activity for the app - the home page.
+ * Displays all events if a user (can be filtered) - displays organizer's created events if organizer.
+ * Users and organizers alike can access events by clicking on them in the list.
+ */
 public class MainActivity extends AppCompatActivity {
 
     private ArrayList<Event> events = new ArrayList<>();
@@ -44,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseFirestore db;
     private LinearLayout rootLayout;
     private ListenerRegistration eventListener;
+    private boolean showMyEventsOnly = false; // Track "My Events" state
 
 
     // Filtering info
@@ -146,6 +152,17 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             });
+            
+            myEventsButton.setOnClickListener(v -> {
+                showMyEventsOnly = !showMyEventsOnly; // Toggle state
+                if (showMyEventsOnly) {
+                    myEventsButton.setText("All Events");
+                    // Maybe change color to indicate active filter?
+                } else {
+                    myEventsButton.setText("My Events");
+                }
+                applyAllFilters(recyclerView);
+            });
 
             setupDTFilters(recyclerView, filterDateButton, filterTimeButton);
         }
@@ -188,6 +205,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // Loads events from the Firebase DB
     private void loadEventsFromFirestore() {
         EventModel eventModel = new EventModel();
 
@@ -238,14 +256,35 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // When called, applies all selected filters (search query, categories, date, time) and displays only those events.
     private void applyAllFilters(RecyclerView recyclerView) {
-        // Combined filter method - filters all of search query strings, categories, date, time as needed by user
         ArrayList<Event> filtered = new ArrayList<>();
 
         long selectedMills = selectedDT.getTimeInMillis();
         long selectedDate = getEventDateFromMill(selectedMills);
         int selectedTimeMins = getTimeMinsFromMill(selectedMills);
+        
+        if (showMyEventsOnly) {
+             WaitlistController wc = new WaitlistController();
+             String userId = auth.getCurrentUser().getUid();
+             wc.getUserWaitlists(userId).addOnSuccessListener(entries -> {
+                 ArrayList<String> myEventIds = new ArrayList<>();
+                 for (WaitlistEntry entry : entries) {
+                     myEventIds.add(entry.getEventId());
+                 }
+                 filterListWithMyEvents(recyclerView, myEventIds, selectedDate, selectedTimeMins);
+             });
+             return;
+        }
 
+        // Standard filtering
+        filterListWithMyEvents(recyclerView, null, selectedDate, selectedTimeMins);
+    }
+    
+    // Applies filters
+    private void filterListWithMyEvents(RecyclerView recyclerView, ArrayList<String> myEventIds, long selectedDate, int selectedTimeMins) {
+        ArrayList<Event> filtered = new ArrayList<>();
+        
         for (Event e : events) {
             // Search all events
             String title = e.getTitle() != null ? e.getTitle().toLowerCase() : "";
@@ -254,6 +293,11 @@ public class MainActivity extends AppCompatActivity {
             int eTime = getTimeMinsFromMill(eDT);
 
             boolean passes = true;
+            
+            // My Events Filter
+            if (myEventIds != null && !myEventIds.contains(e.getId())) {
+                passes = false;
+            }
 
             if (!searchQuery.isEmpty() && !title.contains(searchQuery.toLowerCase()))
                 // Filter by event category/interest
@@ -287,8 +331,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    // Set up toggle buttons to filter by category
     private void setupFilter(RecyclerView recyclerView) {
-        // Set up toggle buttons to filter by category
         LinearLayout filterCols = findViewById(R.id.filter_categories);
         String[] categories = {"Sports", "Art", "Food", "Games", "Community"};
 
@@ -322,8 +366,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // Set up date and time filter dialog and button logic
     private void setupDTFilters(RecyclerView recyclerView, Button filterDateButton, Button filterTimeButton) {
-        // Set up date and time filter dialog and button logic
         filterDateButton.setOnClickListener(v -> {
 
             final Calendar calendar = Calendar.getInstance();

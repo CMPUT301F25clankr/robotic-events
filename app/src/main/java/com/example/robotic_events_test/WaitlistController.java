@@ -43,8 +43,16 @@ public class WaitlistController {
         // Check if event is open before joining
         return eventModel.getEvent(eventId).continueWithTask(eventTask -> {
             Event event = eventTask.getResult();
-            if (event != null && "closed".equals(event.getStatus())) {
+            if (event == null) return Tasks.forResult(false);
+            
+            if ("closed".equals(event.getStatus())) {
                 Log.d(TAG, "Cannot join waitlist: Event is closed.");
+                return Tasks.forResult(false);
+            }
+            
+            // Check Registration Deadline
+            if (System.currentTimeMillis() > event.getRegistrationDeadline() && event.getRegistrationDeadline() > 0) {
+                Log.d(TAG, "Cannot join waitlist: Registration deadline passed.");
                 return Tasks.forResult(false);
             }
 
@@ -92,8 +100,16 @@ public class WaitlistController {
         // Check if event is open before joining
         return eventModel.getEvent(eventId).continueWithTask(eventTask -> {
             Event event = eventTask.getResult();
-            if (event != null && "closed".equals(event.getStatus())) {
+            if (event == null) return Tasks.forResult(false);
+            
+            if ("closed".equals(event.getStatus())) {
                 Log.d(TAG, "Cannot join waitlist: Event is closed.");
+                return Tasks.forResult(false);
+            }
+            
+            // Check Registration Deadline
+            if (System.currentTimeMillis() > event.getRegistrationDeadline() && event.getRegistrationDeadline() > 0) {
+                Log.d(TAG, "Cannot join waitlist: Registration deadline passed.");
                 return Tasks.forResult(false);
             }
 

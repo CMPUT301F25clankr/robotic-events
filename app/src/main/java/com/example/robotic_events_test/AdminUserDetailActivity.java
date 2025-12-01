@@ -13,7 +13,9 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 
-/** Displays the clicked user details and lets admin ban*/
+/**
+ * VIEW: Displays the clicked user details and lets admin ban users from using the application.
+ */
 public class AdminUserDetailActivity extends AppCompatActivity {
 
     private ImageView profileImageView;

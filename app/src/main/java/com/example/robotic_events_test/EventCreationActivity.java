@@ -1,4 +1,3 @@
-// src/main/java/com/example/robotic_events_test/EventCreationActivity.java
 package com.example.robotic_events_test;
 
 import android.content.Intent;
@@ -38,8 +37,8 @@ public class EventCreationActivity extends AppCompatActivity {
     private static final int PICK_BANNER_IMAGE_REQUEST = 2;
 
     private EditText eventTitleSetter, eventCapacitySetter, eventIconUrlSetter, eventBannerUrlSetter;
-    private DatePicker eventDatePicker;
-    private TimePicker eventTimePicker;
+    private DatePicker eventDatePicker, registrationDeadlinePicker;
+    private TimePicker eventTimePicker, registrationDeadlineTimePicker;
     private Button eventCreationConfirm, uploadIconButton, uploadBannerButton;
     private ProgressBar progressBar;
 
@@ -75,7 +74,9 @@ public class EventCreationActivity extends AppCompatActivity {
         eventTitleSetter = findViewById(R.id.eventTitleSetter);
         eventCapacitySetter = findViewById(R.id.eventCapacitySetter);
         eventDatePicker = findViewById(R.id.eventDatePicker);
+        registrationDeadlinePicker = findViewById(R.id.registrationDeadlinePicker);
         eventTimePicker = findViewById(R.id.eventTimePicker);
+        registrationDeadlineTimePicker = findViewById(R.id.registrationDeadlineTimePicker);
         eventIconUrlSetter = findViewById(R.id.eventIconUrlSetter);
         eventBannerUrlSetter = findViewById(R.id.eventBannerUrlSetter);
         uploadIconButton = findViewById(R.id.uploadIconButton);
@@ -166,6 +167,18 @@ public class EventCreationActivity extends AppCompatActivity {
                     eventTimePicker.getMinute()
             );
             long dateTime = calendar.getTimeInMillis();
+
+            // Capture Registration Deadline
+            Calendar deadlineCal = Calendar.getInstance();
+            deadlineCal.set(
+                    registrationDeadlinePicker.getYear(),
+                    registrationDeadlinePicker.getMonth(),
+                    registrationDeadlinePicker.getDayOfMonth(),
+                    registrationDeadlineTimePicker.getHour(),
+                    registrationDeadlineTimePicker.getMinute()
+            );
+            long registrationDeadline = deadlineCal.getTimeInMillis();
+
             int eventCapacity = Integer.parseInt(eventCapacityStr);
             String organizerId = currentUser.getUid();
             //String category = eventCategory;
@@ -180,7 +193,8 @@ public class EventCreationActivity extends AppCompatActivity {
                     chosenCategory,
                     organizerId,
                     finalIconUrl,
-                    finalBannerUrl
+                    finalBannerUrl,
+                    registrationDeadline
             );
 
             eventModel.saveEvent(newEvent);

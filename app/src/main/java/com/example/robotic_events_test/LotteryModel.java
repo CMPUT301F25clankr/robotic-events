@@ -7,6 +7,10 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 import java.util.List;
+/**
+ * MODEL: Lottery model
+ * performs operations on the db relating to lotteries
+ */
 
 public class LotteryModel {
     private final CollectionReference lotteriesCollection;
@@ -18,6 +22,8 @@ public class LotteryModel {
     }
     /**
      * Get the latest lottery result for an event
+     * @param eventId The ID of the event
+     * @return A task that completes with the latest lottery result
      */
     public Task<List<LotteryResult>> getLatestLotteriesForEvent(String eventId) {
         return lotteriesCollection
@@ -33,7 +39,11 @@ public class LotteryModel {
                 });
     }
 
-
+    /**
+     * Save a lottery result to the database
+     * @param result The lottery result to save
+     * @return A task that completes when the result is saved
+     */
     public Task<String> saveLotteryResult(LotteryResult result) {
         return lotteriesCollection.add(result)
                 .continueWith(task -> {

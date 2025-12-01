@@ -11,6 +11,11 @@ import com.google.firebase.firestore.QuerySnapshot;
 import java.util.ArrayList;
 import java.util.List;
 
+
+/**
+ * MODEL: Event model
+ * performs operations on the db relating to events
+ */
 public class EventModel {
     private final CollectionReference eventsCollection;
 
@@ -23,6 +28,13 @@ public class EventModel {
         this("events");
     }
 
+
+    /**
+     * Saves an event to the Firestore database.
+     * If the event already has an ID, it will be updated. Otherwise, a new document will be created.
+     *
+     * @param event The event to save.
+     */
     public void saveEvent(Event event) {
         String id = event.getId();
 
@@ -46,6 +58,12 @@ public class EventModel {
         }
     }
 
+    /**
+     * Retrieves an event from the Firestore database by its ID.
+     *
+     * @param id The ID of the event to retrieve.
+     */
+
     public Task<Event> getEvent(String id) {
         return eventsCollection.document(id).get().continueWith(task -> {
             DocumentSnapshot document = task.getResult();
@@ -56,6 +74,12 @@ public class EventModel {
         });
     }
 
+    /**
+     * Retrieves all events from the Firestore database.
+     *
+     * @return A Task that will be completed with a list of all events.
+     */
+
     public Task<List<Event>> getAllEvents() {
         return eventsCollection.get().continueWith(task -> {
             if (task.isSuccessful()) {
@@ -64,6 +88,13 @@ public class EventModel {
             return new ArrayList<>();
         });
     }
+
+    /**
+     * Retrieves events from the Firestore database for a specific organizer.
+     *
+     * @param organizerId The ID of the organizer to filter events by.
+     * @return A Task that will be completed with a list of events for the specified organizer.
+     */
 
     // ADDED: Get events only for a specific organizer
     public Task<List<Event>> getOrganizerEvents(String organizerId) {
@@ -83,6 +114,12 @@ public class EventModel {
     public ListenerRegistration addOrganizerEventsListener(String organizerId, EventListener<QuerySnapshot> listener) {
         return eventsCollection.whereEqualTo("organizerId", organizerId).addSnapshotListener(listener);
     }
+
+    /**
+     * Deletes an event from the Firestore database by its ID.
+     *
+     * @param id The ID of the event to delete.
+     */
 
     public Task<Void> deleteEvent(String id) {
         if (id == null || id.isEmpty()) {

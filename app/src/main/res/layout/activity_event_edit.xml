@@ -65,6 +65,14 @@
             android:layout_marginTop="16dp"
             android:hint="Capacity" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Event Date:"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"/>
+
         <DatePicker
             android:id="@+id/eventDatePickerEditor"
             android:layout_width="match_parent"
@@ -72,8 +80,46 @@
             android:calendarViewShown="false"
             android:datePickerMode="spinner" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Event Time:"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"/>
+
         <TimePicker
             android:id="@+id/eventTimePickerEditor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:timePickerMode="spinner" />
+
+        <!-- Registration Deadline Editor -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Registration Deadline Date:"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"/>
+
+        <DatePicker
+            android:id="@+id/registrationDeadlinePickerEditor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:calendarViewShown="false"
+            android:datePickerMode="spinner" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Registration Deadline Time:"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"/>
+
+        <TimePicker
+            android:id="@+id/registrationDeadlineTimePickerEditor"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:timePickerMode="spinner" />
@@ -89,6 +135,7 @@
             android:id="@+id/eventSaveChangesConfirm"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
             android:text="Save Changes" />
 
         <Button

@@ -16,7 +16,10 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
-/** Does the admin access validation */
+/**
+ * VIEW: Handles admin access validation - If the user has an admin code, this page redirects
+ * them to sensitive admin activities accordingly.
+ */
 public class AdminAccessActivity extends AppCompatActivity {
 
     private TextInputEditText adminCodeInput;

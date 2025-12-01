@@ -2,6 +2,7 @@ package com.example.robotic_events_test;
 
 import android.util.Log;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -50,16 +51,18 @@ public class WaitlistModel {
                 .whereEqualTo("eventId", eventId)
                 .whereEqualTo("userId", userId)
                 .get()
-                .continueWith(task -> {
+                .continueWithTask(task -> {
                     if (task.isSuccessful() && task.getResult() != null) {
+                        List<Task<Void>> deleteTasks = new ArrayList<>();
                         for (DocumentSnapshot doc : task.getResult().getDocuments()) {
-                            doc.getReference().delete();
-                            Log.d(TAG, "Waitlist entry removed: " + doc.getId());
+                            deleteTasks.add(doc.getReference().delete());
+                            Log.d(TAG, "Deleting waitlist entry: " + doc.getId());
                         }
+                        return Tasks.whenAll(deleteTasks);
                     } else {
-                        Log.e(TAG, "Error removing waitlist entry", task.getException());
+                        Log.e(TAG, "Error finding waitlist entry to remove", task.getException());
+                        return Tasks.forResult(null);
                     }
-                    return null;
                 });
     }
 

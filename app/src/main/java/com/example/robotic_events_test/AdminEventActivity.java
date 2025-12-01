@@ -11,6 +11,10 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import java.util.ArrayList;
 
+
+/**
+ * VIEW: Displays a list view of events for the admin to manage -> navigates to event details
+ */
 public class AdminEventActivity extends AppCompatActivity {
 
     private ArrayList<Event> events = new ArrayList<>();

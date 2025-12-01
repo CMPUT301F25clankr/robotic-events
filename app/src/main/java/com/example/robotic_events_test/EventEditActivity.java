@@ -21,14 +21,18 @@ import com.google.android.gms.tasks.Tasks;
 
 import java.util.Calendar;
 
+/**
+ * VIEW: Adapted from EventCreationActivity.java; enables Organizers to edit their event's attributes;
+ * saves the new information to the DB.
+ */
 public class EventEditActivity extends AppCompatActivity {
 
     private static final int PICK_ICON_IMAGE_REQUEST = 1;
     private static final int PICK_BANNER_IMAGE_REQUEST = 2;
 
     private EditText eventTitleEditor, eventCapacityEditor, eventIconUrlEditor, eventBannerUrlEditor;
-    private DatePicker eventDatePickerEditor;
-    private TimePicker eventTimePickerEditor;
+    private DatePicker eventDatePickerEditor, registrationDeadlinePickerEditor;
+    private TimePicker eventTimePickerEditor, registrationDeadlineTimePickerEditor;
     private Button eventSaveChangesConfirm, eventDeleteConfirm, uploadIconButton, uploadBannerButton;
     private ProgressBar progressBar;
 
@@ -60,11 +64,14 @@ public class EventEditActivity extends AppCompatActivity {
         eventDeleteConfirm.setOnClickListener(v -> showDeleteConfirmationDialog());
     }
 
+    // Initialize references for views that are used or manipulated inside the view.
     private void initializeViews() {
         eventTitleEditor = findViewById(R.id.eventTitleEditor);
         eventCapacityEditor = findViewById(R.id.eventCapacityEditor);
         eventDatePickerEditor = findViewById(R.id.eventDatePickerEditor);
         eventTimePickerEditor = findViewById(R.id.eventTimePickerEditor);
+        registrationDeadlinePickerEditor = findViewById(R.id.registrationDeadlinePickerEditor);
+        registrationDeadlineTimePickerEditor = findViewById(R.id.registrationDeadlineTimePickerEditor);
         eventSaveChangesConfirm = findViewById(R.id.eventSaveChangesConfirm);
         eventDeleteConfirm = findViewById(R.id.eventDeleteConfirm);
         eventIconUrlEditor = findViewById(R.id.eventIconUrlEditor);
@@ -93,6 +100,7 @@ public class EventEditActivity extends AppCompatActivity {
         }
     }
 
+    // Load information about the event
     private void loadEventData() {
         eventModel.getEvent(eventId).addOnSuccessListener(event -> {
             if (event != null) {
@@ -102,6 +110,7 @@ public class EventEditActivity extends AppCompatActivity {
         });
     }
 
+    // Given event information, populate the fields as necessary
     private void populateFields() {
         eventTitleEditor.setText(currentEvent.getTitle());
         eventCapacityEditor.setText(String.valueOf(currentEvent.getTotalCapacity()));
@@ -113,8 +122,18 @@ public class EventEditActivity extends AppCompatActivity {
         eventDatePickerEditor.updateDate(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH));
         eventTimePickerEditor.setHour(cal.get(Calendar.HOUR_OF_DAY));
         eventTimePickerEditor.setMinute(cal.get(Calendar.MINUTE));
+        
+        // Populate Registration Deadline
+        if (currentEvent.getRegistrationDeadline() > 0) {
+            Calendar regCal = Calendar.getInstance();
+            regCal.setTimeInMillis(currentEvent.getRegistrationDeadline());
+            registrationDeadlinePickerEditor.updateDate(regCal.get(Calendar.YEAR), regCal.get(Calendar.MONTH), regCal.get(Calendar.DAY_OF_MONTH));
+            registrationDeadlineTimePickerEditor.setHour(regCal.get(Calendar.HOUR_OF_DAY));
+            registrationDeadlineTimePickerEditor.setMinute(regCal.get(Calendar.MINUTE));
+        }
     }
 
+    // Save event changes to the event object; ensures these changes are reflected in the DB.
     private void saveEventChanges() {
         setLoading(true);
 
@@ -144,9 +163,21 @@ public class EventEditActivity extends AppCompatActivity {
             Calendar calendar = Calendar.getInstance();
             calendar.set(eventDatePickerEditor.getYear(), eventDatePickerEditor.getMonth(), eventDatePickerEditor.getDayOfMonth(),
                     eventTimePickerEditor.getHour(), eventTimePickerEditor.getMinute());
+            
+            // Capture Registration Deadline
+            Calendar deadlineCal = Calendar.getInstance();
+            deadlineCal.set(
+                    registrationDeadlinePickerEditor.getYear(),
+                    registrationDeadlinePickerEditor.getMonth(),
+                    registrationDeadlinePickerEditor.getDayOfMonth(),
+                    registrationDeadlineTimePickerEditor.getHour(),
+                    registrationDeadlineTimePickerEditor.getMinute()
+            );
+            
             currentEvent.setTitle(eventTitleEditor.getText().toString());
             currentEvent.setTotalCapacity(Integer.parseInt(eventCapacityEditor.getText().toString()));
             currentEvent.setDateTime(calendar.getTimeInMillis());
+            currentEvent.setRegistrationDeadline(deadlineCal.getTimeInMillis());
 
             eventModel.saveEvent(currentEvent);
             return Tasks.forResult(null); // Return a task to continue the chain
@@ -173,6 +204,7 @@ public class EventEditActivity extends AppCompatActivity {
         }
     }
 
+    // Shows a dialog box asking the Organizer to confirm whether they'd like to delete an event; calls deleteEvent() if yes.
     private void showDeleteConfirmationDialog() {
         new AlertDialog.Builder(this)
                 .setTitle("Delete Event")
@@ -183,6 +215,7 @@ public class EventEditActivity extends AppCompatActivity {
                 .show();
     }
 
+    // Called by showDeleteConfirmationDialog - deletes the event object and removes from the DB.
     private void deleteEvent() {
         eventModel.deleteEvent(eventId).addOnSuccessListener(aVoid -> {
             Toast.makeText(this, "Event Deleted", Toast.LENGTH_SHORT).show();

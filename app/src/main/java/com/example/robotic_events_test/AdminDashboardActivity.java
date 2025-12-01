@@ -12,12 +12,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.appbar.MaterialToolbar;
 
 /**
- Lets admin decide to manage users or events
+ VIEW: Lets admin decide to manage users, events, notifications, pictures; redirects based on their input
  */
 public class AdminDashboardActivity extends AppCompatActivity {
 
     private Button manageUsersButton;
     private Button manageEventsButton;
+    private Button manageImagesButton;
     private TextView adminDashboardTitle;
 
     @Override
@@ -37,6 +38,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
         manageUsersButton = findViewById(R.id.manageUsersButton);
         manageEventsButton = findViewById(R.id.manageEventsButton);
+        manageImagesButton = findViewById(R.id.manageImagesButton);
         adminDashboardTitle = findViewById(R.id.adminDashboardTitle);
 
         Intent intent = getIntent();
@@ -55,12 +57,18 @@ public class AdminDashboardActivity extends AppCompatActivity {
             startActivity(userIntent);
         });
 
-
         manageEventsButton.setOnClickListener(v -> {
             Toast.makeText(this, "Navigating to Manage Events...", Toast.LENGTH_SHORT).show();
             Intent eventIntent = new Intent(AdminDashboardActivity.this, AdminEventActivity.class);
             startActivity(eventIntent);
         });
+
+        manageImagesButton.setOnClickListener(v -> {
+            Intent imageIntent = new Intent(AdminDashboardActivity.this, ManageImagesActivity.class);
+            startActivity(imageIntent);
+        });
+
+
     }
 
     @Override

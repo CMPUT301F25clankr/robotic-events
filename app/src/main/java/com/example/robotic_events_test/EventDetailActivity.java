@@ -4,26 +4,20 @@ import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.SharedPreferences;
-import androidx.appcompat.app.AlertDialog;
-import android.widget.CheckBox;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
-import android.text.TextUtils;
+import android.os.CountDownTimer;
 import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
-import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
-
-import com.bumptech.glide.Glide;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
@@ -58,6 +52,8 @@ public class EventDetailActivity extends AppCompatActivity {
     private Button joinLeaveWaitlistButton;
     private Button removeEventButton;
     private TextView detailWaitlist;
+    private TextView registrationDeadlineText;
+    private CountDownTimer deadlineTimer;
 
     @SuppressLint({"SetTextI18n", "DefaultLocale"})
     @Override
@@ -68,7 +64,7 @@ public class EventDetailActivity extends AppCompatActivity {
         lotteryController = new LotteryController();
 
         auth = FirebaseAuth.getInstance();
-        waitlistController = new WaitlistController();
+        waitlistController = new WaitlistController();  // Initialize controller
 
         // Get passed event
         event = (Event) getIntent().getSerializableExtra("event");
@@ -78,16 +74,21 @@ public class EventDetailActivity extends AppCompatActivity {
             return;
         }
 
-        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
-        isAdmin = prefs.getBoolean("isAdmin", false);
-
+        // Check if current user is the organizer
         if (auth.getCurrentUser() != null) {
             isOrganizer = event.getOrganizerId().equals(auth.getCurrentUser().getUid());
         }
 
+        //checks if user is admin
+        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+        isAdmin = prefs.getBoolean("isAdmin", false);
+
         // Setup Toolbar
         MaterialToolbar toolbar = findViewById(R.id.eventDetailToolbar);
-        toolbar.setNavigationOnClickListener(v -> finish());
+        toolbar.setNavigationOnClickListener(v -> {
+            Log.d("EventDetail", "Back button clicked");
+            finish();
+        });
 
         // Initialize views
         initializeViews();
@@ -102,14 +103,25 @@ public class EventDetailActivity extends AppCompatActivity {
         setupButtonListeners();
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (deadlineTimer != null) {
+            deadlineTimer.cancel();
+        }
+    }
+
     private void initializeViews() {
         detailWaitlist = findViewById(R.id.detailWaitlist);
         joinLeaveWaitlistButton = findViewById(R.id.joinLeaveWaitlistButton);
+        registrationDeadlineText = findViewById(R.id.registrationDeadlineText);
         removeEventButton = findViewById(R.id.removeEventButton);
+
         FloatingActionButton fabEditEvent = findViewById(R.id.fab_edit_event);
         FloatingActionButton fabGenQr = findViewById(R.id.gen_qr_code);
         runLotteryButton = findViewById(R.id.runLotteryButton);
         Button viewLotteryResultsButton = findViewById(R.id.viewLotteryResultsButton);
+
 
         if (isAdmin) {
             joinLeaveWaitlistButton.setVisibility(View.GONE);
@@ -119,11 +131,11 @@ public class EventDetailActivity extends AppCompatActivity {
             removeEventButton.setVisibility(View.GONE);
         }
 
+        // Show edit FAB and lottery buttons only if user is organizer
         if (isOrganizer) {
-            joinLeaveWaitlistButton.setVisibility(View.GONE);
-
             fabEditEvent.setVisibility(View.VISIBLE);
             fabEditEvent.setOnClickListener(v -> {
+                // Launch EventEditActivity with event ID
                 Intent intent = new Intent(this, EventEditActivity.class);
                 intent.putExtra("id", event.getId());
                 startActivity(intent);
@@ -131,8 +143,7 @@ public class EventDetailActivity extends AppCompatActivity {
 
             fabGenQr.setVisibility(View.VISIBLE);
             fabGenQr.setOnClickListener(v -> {
-                // Generate QR Code on click; create and display dialog
-                // Create dialog
+                // Generate QR Code stuff
                 Dialog dialog = new Dialog(this);
                 dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
                 dialog.setContentView(R.layout.gen_qr_code_dialog);
@@ -150,7 +161,6 @@ public class EventDetailActivity extends AppCompatActivity {
                 // Show dialog
                 dialog.show();
             });
-
             //geolocation stuff
             Button viewMapButton = findViewById(R.id.viewMapButton);
             Button geolocationSettingsButton = findViewById(R.id.geolocationSettingsButton);
@@ -172,7 +182,7 @@ public class EventDetailActivity extends AppCompatActivity {
                     startActivity(intent);
                 });
             }
-
+            
             // Hide Run Lottery button if event is closed
             if ("closed".equals(event.getStatus())) {
                 runLotteryButton.setVisibility(View.GONE);
@@ -192,11 +202,22 @@ public class EventDetailActivity extends AppCompatActivity {
             runLotteryButton.setVisibility(View.GONE);
             viewLotteryResultsButton.setVisibility(View.GONE);
         }
+        
+        // Handle Join Waitlist Button state based on event status and deadline
+        checkDeadlineAndStatus();
+    }
 
-        // Handle Join Waitlist Button state based on event status
-        if ("closed".equals(event.getStatus())) {
+    private void checkDeadlineAndStatus() {
+        boolean closed = "closed".equals(event.getStatus());
+        boolean deadlinePassed = event.getRegistrationDeadline() > 0 && System.currentTimeMillis() > event.getRegistrationDeadline();
+
+        if (closed) {
             joinLeaveWaitlistButton.setEnabled(false);
             joinLeaveWaitlistButton.setText("Event Closed");
+            joinLeaveWaitlistButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.GRAY));
+        } else if (deadlinePassed) {
+            joinLeaveWaitlistButton.setEnabled(false);
+            joinLeaveWaitlistButton.setText("Registration Closed");
             joinLeaveWaitlistButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.GRAY));
         }
     }
@@ -211,7 +232,6 @@ public class EventDetailActivity extends AppCompatActivity {
         TextView detailCategory = findViewById(R.id.detailCategory);
         TextView detailOrganizer = findViewById(R.id.detailOrganizer);
         TextView detailDescription = findViewById(R.id.detailDescription);
-        ImageView detailImage = findViewById(R.id.detailImage);
 
         detailTitle.setText(event.getTitle());
         detailWhen.setText(DateFormat.format("MMM dd, yyyy h:mm a", event.getDateTime()));
@@ -221,13 +241,48 @@ public class EventDetailActivity extends AppCompatActivity {
         detailCategory.setText(event.getCategory());
         detailOrganizer.setText("Organizer ID: " + event.getOrganizerId());
         detailDescription.setText(event.getDescription() != null ? event.getDescription() : "No description available");
+        
+        // Registration Deadline Logic
+        if (event.getRegistrationDeadline() > 0) {
+            long now = System.currentTimeMillis();
+            if (now > event.getRegistrationDeadline()) {
+                registrationDeadlineText.setText("Registration Closed");
+                registrationDeadlineText.setTextColor(Color.RED);
+            } else {
+                registrationDeadlineText.setVisibility(View.VISIBLE);
+                startDeadlineCountdown(event.getRegistrationDeadline());
+            }
+        } else {
+            registrationDeadlineText.setVisibility(View.GONE);
+        }
+    }
+    
+    private void startDeadlineCountdown(long deadlineMillis) {
+        long millisInFuture = deadlineMillis - System.currentTimeMillis();
+        if (millisInFuture <= 0) return;
 
-        String bannerUrl = TextUtils.isEmpty(event.getBannerUrl()) ? Constants.DEFAULT_EVENT_BANNER_URL : event.getBannerUrl();
-        Glide.with(this)
-                .load(bannerUrl)
-                .placeholder(R.drawable.ic_launcher_background) // A default placeholder
-                .error(Constants.DEFAULT_EVENT_BANNER_URL) // Fallback on error
-                .into(detailImage);
+        deadlineTimer = new CountDownTimer(millisInFuture, 1000) {
+            public void onTick(long millisUntilFinished) {
+                long seconds = millisUntilFinished / 1000;
+                long minutes = seconds / 60;
+                long hours = minutes / 60;
+                long days = hours / 24;
+
+                String timeString;
+                if (days > 0) {
+                    timeString = String.format("%dd %02dh left", days, hours % 24);
+                } else {
+                    timeString = String.format("%02d:%02d:%02d left", hours, minutes % 60, seconds % 60);
+                }
+                registrationDeadlineText.setText("Deadline: " + DateFormat.format("MMM dd, h:mm a", deadlineMillis) + " (" + timeString + ")");
+            }
+
+            public void onFinish() {
+                registrationDeadlineText.setText("Registration Closed");
+                registrationDeadlineText.setTextColor(Color.RED);
+                checkDeadlineAndStatus(); // Update button
+            }
+        }.start();
     }
 
     private void loadWaitlistData() {
@@ -264,17 +319,21 @@ public class EventDetailActivity extends AppCompatActivity {
                 Toast.makeText(this, "Please log in to join waitlist", Toast.LENGTH_SHORT).show();
                 return;
             }
-
+            
             if ("closed".equals(event.getStatus())) {
-                Toast.makeText(this, "Registration is closed for this event.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Event is closed.", Toast.LENGTH_SHORT).show();
                 return;
             }
-
+            
+            if (event.getRegistrationDeadline() > 0 && System.currentTimeMillis() > event.getRegistrationDeadline()) {
+                Toast.makeText(this, "Registration deadline has passed.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
             handleWaitlistToggle();
         });
 
         removeEventButton.setOnClickListener(v -> removeEvent());
-
         runLotteryButton.setOnClickListener(v -> {
             if (!isOrganizer) {
                 Toast.makeText(this, "Only the organizer can run the lottery", Toast.LENGTH_SHORT).show();
@@ -291,11 +350,11 @@ public class EventDetailActivity extends AppCompatActivity {
                     .addOnSuccessListener(success -> {
                         if (success) {
                             Toast.makeText(this, "Lottery run successfully", Toast.LENGTH_SHORT).show();
-
+                            
                             // Update local event status and UI
                             event.setStatus("closed");
                             initializeViews(); // Refresh button states
-
+                            
                         } else {
                             Toast.makeText(this, "Lottery could not be run", Toast.LENGTH_SHORT).show();
                         }
@@ -307,6 +366,34 @@ public class EventDetailActivity extends AppCompatActivity {
         });
 
     }
+
+    //Admin deletes events and associated waitlists
+    private void removeEvent() {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        String eventId = event.getId();
+
+        db.collection("waitlists").whereEqualTo("eventId", eventId).get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        document.getReference().delete();
+                    }
+
+                    db.collection("events").document(eventId).delete()
+                            .addOnSuccessListener(aVoid -> {
+                                Toast.makeText(this, "Event removed successfully", Toast.LENGTH_SHORT).show();
+                                finish();
+                            })
+                            .addOnFailureListener(e -> {
+                                Toast.makeText(this, "Error removing event", Toast.LENGTH_SHORT).show();
+                                Log.e("EventDetailActivity", "Error removing event", e);
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Error cleaning up waitlist", Toast.LENGTH_SHORT).show();
+                    Log.e("EventDetailActivity", "Error cleaning up waitlist", e);
+                });
+    }
+
     private void captureLocationAndJoinWaitlist(String userId) {
         LocationHelper locationHelper = new LocationHelper(this);
 
@@ -360,7 +447,7 @@ public class EventDetailActivity extends AppCompatActivity {
         String userId = auth.getCurrentUser().getUid();
 
         if (isInWaitlist) {
-            // Leave waitlist through controller
+            // Leave waitlist - keep existing code
             waitlistController.leaveWaitlist(event.getId(), userId)
                     .addOnSuccessListener(success -> {
                         if (success) {
@@ -377,96 +464,28 @@ public class EventDetailActivity extends AppCompatActivity {
                         Log.e("EventDetail", "Error leaving waitlist", e);
                     });
         } else {
-            // User is trying to JOIN, so check if we should show the dialog
-            SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
-            boolean dontShow = prefs.getBoolean("dont_show_lottery_info", false);
-
-            if (dontShow) {
-                // If user checked "don't show again", join directly
-                proceedToJoinWaitlist();
+            // Join waitlist - check if geolocation required
+            if (event.isGeolocationRequired()) {
+                captureLocationAndJoinWaitlist(userId);
             } else {
-                // Otherwise, show the informational dialog
-                showLotteryInfoDialog();
+                // No geolocation required, use existing join method
+                waitlistController.joinWaitlist(event.getId(), userId)
+                        .addOnSuccessListener(success -> {
+                            if (success) {
+                                isInWaitlist = true;
+                                updateButtonText();
+                                refreshWaitlistCount();
+                                Toast.makeText(this, "Added to waitlist!", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(this, "Failed to join waitlist", Toast.LENGTH_SHORT).show();
+                            }
+                        })
+                        .addOnFailureListener(e -> {
+                            Toast.makeText(this, "Error joining waitlist", Toast.LENGTH_SHORT).show();
+                            Log.e("EventDetail", "Error joining waitlist", e);
+                        });
             }
         }
-    }
-
-    /**
-     * Shows a dialog explaining the lottery process.
-     */
-    private void showLotteryInfoDialog() {
-        View dialogView = getLayoutInflater().inflate(R.layout.dialog_lottery_info, null);
-        CheckBox dontShowAgainCheckbox = dialogView.findViewById(R.id.checkbox_dont_show_again);
-
-        new AlertDialog.Builder(this)
-                .setTitle("Lottery System Information")
-                .setView(dialogView)
-                .setPositiveButton("Join Waitlist", (dialog, which) -> {
-                    // If the "Don't show again" box is checked, save the preference
-                    if (dontShowAgainCheckbox.isChecked()) {
-                        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
-                        prefs.edit().putBoolean("dont_show_lottery_info", true).apply();
-                    }
-                    // Proceed with joining the waitlist
-                    proceedToJoinWaitlist();
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-
-    /**
-     * Contains the logic to join a waitlist, either with or without geolocation.
-     */
-    private void proceedToJoinWaitlist() {
-        String userId = auth.getCurrentUser().getUid();
-
-        if (event.isGeolocationRequired()) {
-            captureLocationAndJoinWaitlist(userId);
-        } else {
-            waitlistController.joinWaitlist(event.getId(), userId)
-                    .addOnSuccessListener(success -> {
-                        if (success) {
-                            isInWaitlist = true;
-                            updateButtonText();
-                            refreshWaitlistCount();
-                            Toast.makeText(this, "Added to waitlist!", Toast.LENGTH_SHORT).show();
-                        } else {
-                            Toast.makeText(this, "Failed to join waitlist", Toast.LENGTH_SHORT).show();
-                        }
-                    })
-                    .addOnFailureListener(e -> {
-                        Toast.makeText(this, "Error joining waitlist", Toast.LENGTH_SHORT).show();
-                        Log.e("EventDetail", "Error joining waitlist", e);
-                    });
-        }
-    }
-
-
-    //Admin deletes events and associated waitlists
-    private void removeEvent() {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        String eventId = event.getId();
-
-        db.collection("waitlists").whereEqualTo("eventId", eventId).get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
-                        document.getReference().delete();
-                    }
-
-                    db.collection("events").document(eventId).delete()
-                            .addOnSuccessListener(aVoid -> {
-                                Toast.makeText(this, "Event removed successfully", Toast.LENGTH_SHORT).show();
-                                finish();
-                            })
-                            .addOnFailureListener(e -> {
-                                Toast.makeText(this, "Error removing event", Toast.LENGTH_SHORT).show();
-                                Log.e("EventDetailActivity", "Error removing event", e);
-                            });
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Error cleaning up waitlist", Toast.LENGTH_SHORT).show();
-                    Log.e("EventDetailActivity", "Error cleaning up waitlist", e);
-                });
     }
 
     private void updateButtonText() {
@@ -477,13 +496,22 @@ public class EventDetailActivity extends AppCompatActivity {
             joinLeaveWaitlistButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.GRAY));
             return;
         }
+        
+        if (event.getRegistrationDeadline() > 0 && System.currentTimeMillis() > event.getRegistrationDeadline()) {
+            joinLeaveWaitlistButton.setText("Registration Closed");
+            joinLeaveWaitlistButton.setEnabled(false);
+            joinLeaveWaitlistButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.GRAY));
+            return;
+        }
 
         if (isInWaitlist) {
             joinLeaveWaitlistButton.setText("Leave Waitlist");
             joinLeaveWaitlistButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(getColor(android.R.color.holo_red_dark)));
+            joinLeaveWaitlistButton.setEnabled(true);
         } else {
             joinLeaveWaitlistButton.setText("Join Waitlist");
             joinLeaveWaitlistButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#008000")));
+            joinLeaveWaitlistButton.setEnabled(true);
         }
     }
 
@@ -497,18 +525,20 @@ public class EventDetailActivity extends AppCompatActivity {
                 });
     }
 
-    private Bitmap generateQRCode(String text) {
-        BarcodeEncoder barcodeEncoder = new BarcodeEncoder();
+    private Bitmap generateQRCode(String text)
+    {
+        BarcodeEncoder barcodeEncoder
+                = new BarcodeEncoder();
         try {
 
             // This method returns a Bitmap image of the
             // encoded text with a height and width of 400
             // pixels.
             return barcodeEncoder.encodeBitmap(text, BarcodeFormat.QR_CODE, 400, 400);
-        } catch (WriterException e) {
+        }
+        catch (WriterException e) {
             Log.e("EventDetail", "Failed");
         }
         return null;
     }
 }
-
