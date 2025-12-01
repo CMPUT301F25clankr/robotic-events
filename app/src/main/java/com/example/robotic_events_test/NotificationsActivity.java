@@ -19,6 +19,10 @@ import com.google.firebase.firestore.Query;
 import java.util.ArrayList;
 import java.util.Collections;
 
+/**
+ * VIEW: Allows users to view and manage their notifications (received from event status changes,
+ * admins, etc.)
+ */
 public class NotificationsActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
@@ -55,6 +59,7 @@ public class NotificationsActivity extends AppCompatActivity {
         loadNotifications();
     }
 
+    // Queries and loads the user's notifications for display.
     private void loadNotifications() {
         // We remove the orderBy clause to avoid needing a composite index in Firestore.
         // We will sort the results client-side instead.

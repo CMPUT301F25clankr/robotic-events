@@ -34,6 +34,11 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Objects;
 
+/**
+ * VIEW: Main activity for the app - the home page.
+ * Displays all events if a user (can be filtered) - displays organizer's created events if organizer.
+ * Users and organizers alike can access events by clicking on them in the list.
+ */
 public class MainActivity extends AppCompatActivity {
 
     private ArrayList<Event> events = new ArrayList<>();
@@ -200,6 +205,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // Loads events from the Firebase DB
     private void loadEventsFromFirestore() {
         EventModel eventModel = new EventModel();
 
@@ -250,28 +256,15 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // When called, applies all selected filters (search query, categories, date, time) and displays only those events.
     private void applyAllFilters(RecyclerView recyclerView) {
-        // Combined filter method - filters all of search query strings, categories, date, time as needed by user
         ArrayList<Event> filtered = new ArrayList<>();
 
         long selectedMills = selectedDT.getTimeInMillis();
         long selectedDate = getEventDateFromMill(selectedMills);
         int selectedTimeMins = getTimeMinsFromMill(selectedMills);
         
-        // Need WaitlistController to check "My Events"
-        // This is inefficient in a loop (async call per item). 
-        // Better approach: Fetch user's waitlist IDs ONCE, then filter.
-        // However, `applyAllFilters` is synchronous.
-        // We can't easily do async check inside this loop without refactoring.
-        // For now, if showMyEventsOnly is true, we might need to reload data or use a different strategy.
-        
         if (showMyEventsOnly) {
-             // Async fetch of my events is needed.
-             // For simplicity here, we will just fetch the user's waitlist entries and filter the main list.
-             // But `applyAllFilters` is called on search/text change.
-             // We should probably fetch "myEventIds" when the toggle is clicked or cache them.
-             
-             // Let's implement a quick fetch and then filter.
              WaitlistController wc = new WaitlistController();
              String userId = auth.getCurrentUser().getUid();
              wc.getUserWaitlists(userId).addOnSuccessListener(entries -> {
@@ -279,17 +272,16 @@ public class MainActivity extends AppCompatActivity {
                  for (WaitlistEntry entry : entries) {
                      myEventIds.add(entry.getEventId());
                  }
-                 
-                 // Now filter
                  filterListWithMyEvents(recyclerView, myEventIds, selectedDate, selectedTimeMins);
              });
-             return; // Exit and let the callback handle the update
+             return;
         }
 
         // Standard filtering
         filterListWithMyEvents(recyclerView, null, selectedDate, selectedTimeMins);
     }
     
+    // Applies filters
     private void filterListWithMyEvents(RecyclerView recyclerView, ArrayList<String> myEventIds, long selectedDate, int selectedTimeMins) {
         ArrayList<Event> filtered = new ArrayList<>();
         
@@ -339,8 +331,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    // Set up toggle buttons to filter by category
     private void setupFilter(RecyclerView recyclerView) {
-        // Set up toggle buttons to filter by category
         LinearLayout filterCols = findViewById(R.id.filter_categories);
         String[] categories = {"Sports", "Art", "Food", "Games", "Community"};
 
@@ -374,8 +366,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // Set up date and time filter dialog and button logic
     private void setupDTFilters(RecyclerView recyclerView, Button filterDateButton, Button filterTimeButton) {
-        // Set up date and time filter dialog and button logic
         filterDateButton.setOnClickListener(v -> {
 
             final Calendar calendar = Calendar.getInstance();

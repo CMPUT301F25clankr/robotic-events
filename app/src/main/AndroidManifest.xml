@@ -57,6 +57,26 @@
         <activity
             android:name=".EventGeolocationSettingsActivity"
             android:exported="false" />
+        <activity
+            android:name=".AdminAccessActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AdminDashboardActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AdminUserActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AdminUserDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AdminEventActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ManageImagesActivity"
+            android:exported="false" />
+
+
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyCW09_gCSILKiWwoKGRkO49RzFXA8W8kJc" />

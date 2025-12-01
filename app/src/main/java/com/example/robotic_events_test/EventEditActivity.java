@@ -21,6 +21,10 @@ import com.google.android.gms.tasks.Tasks;
 
 import java.util.Calendar;
 
+/**
+ * VIEW: Adapted from EventCreationActivity.java; enables Organizers to edit their event's attributes;
+ * saves the new information to the DB.
+ */
 public class EventEditActivity extends AppCompatActivity {
 
     private static final int PICK_ICON_IMAGE_REQUEST = 1;
@@ -60,6 +64,7 @@ public class EventEditActivity extends AppCompatActivity {
         eventDeleteConfirm.setOnClickListener(v -> showDeleteConfirmationDialog());
     }
 
+    // Initialize references for views that are used or manipulated inside the view.
     private void initializeViews() {
         eventTitleEditor = findViewById(R.id.eventTitleEditor);
         eventCapacityEditor = findViewById(R.id.eventCapacityEditor);
@@ -95,6 +100,7 @@ public class EventEditActivity extends AppCompatActivity {
         }
     }
 
+    // Load information about the event
     private void loadEventData() {
         eventModel.getEvent(eventId).addOnSuccessListener(event -> {
             if (event != null) {
@@ -104,6 +110,7 @@ public class EventEditActivity extends AppCompatActivity {
         });
     }
 
+    // Given event information, populate the fields as necessary
     private void populateFields() {
         eventTitleEditor.setText(currentEvent.getTitle());
         eventCapacityEditor.setText(String.valueOf(currentEvent.getTotalCapacity()));
@@ -126,6 +133,7 @@ public class EventEditActivity extends AppCompatActivity {
         }
     }
 
+    // Save event changes to the event object; ensures these changes are reflected in the DB.
     private void saveEventChanges() {
         setLoading(true);
 
@@ -196,6 +204,7 @@ public class EventEditActivity extends AppCompatActivity {
         }
     }
 
+    // Shows a dialog box asking the Organizer to confirm whether they'd like to delete an event; calls deleteEvent() if yes.
     private void showDeleteConfirmationDialog() {
         new AlertDialog.Builder(this)
                 .setTitle("Delete Event")
@@ -206,6 +215,7 @@ public class EventEditActivity extends AppCompatActivity {
                 .show();
     }
 
+    // Called by showDeleteConfirmationDialog - deletes the event object and removes from the DB.
     private void deleteEvent() {
         eventModel.deleteEvent(eventId).addOnSuccessListener(aVoid -> {
             Toast.makeText(this, "Event Deleted", Toast.LENGTH_SHORT).show();

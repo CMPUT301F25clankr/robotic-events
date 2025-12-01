@@ -13,6 +13,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+/**
+ * VIEW: Allows individuals to register to use the app. Users can choose to be Participants/Entrants
+ * or Event Organizers. Users input a username, login email, and a password.
+ */
 public class SignupActivity extends AppCompatActivity {
 
     private FirebaseAuth auth;
@@ -46,6 +50,7 @@ public class SignupActivity extends AppCompatActivity {
         });
     }
 
+    // Handles all user registration and creates new users in the DB based on input field values.
     private void registerUser() {
         String name = nameInput.getText().toString().trim();
         String email = emailInput.getText().toString().trim();

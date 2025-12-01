@@ -14,6 +14,10 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+/**
+ * VIEW: Allows all types of users to modify attributes about their account, including personal
+ * information. Also enables users to delete their accounts/profiles and associated info.
+ */
 public class ProfileActivity extends AppCompatActivity {
 
     private EditText nameInput, emailInput, phoneInput, locationInput;
@@ -55,6 +59,7 @@ public class ProfileActivity extends AppCompatActivity {
         toolbar.setNavigationOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
     }
 
+    // Loads user's data from the database
     private void loadUserData() {
         db.collection("users").document(uid).get()
                 .addOnSuccessListener(doc -> {
@@ -69,6 +74,7 @@ public class ProfileActivity extends AppCompatActivity {
                 });
     }
 
+    // Updates user's changed data (based on input fields) to the database
     private void updateProfile() {
         db.collection("users").document(uid)
                 .update(
@@ -81,6 +87,7 @@ public class ProfileActivity extends AppCompatActivity {
         Toast.makeText(this, "Profile Updated!", Toast.LENGTH_SHORT).show();
     }
 
+    // Logs out and navigates to the login activity
     private void logout() {
         SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
         prefs.edit().remove("dont_show_lottery_info").apply();
@@ -90,6 +97,7 @@ public class ProfileActivity extends AppCompatActivity {
         startActivity(new Intent(this, LoginActivity.class));
     }
 
+    // Deletes account on button press when called
     private void deleteAccount() {
         db.collection("users").document(uid).delete();
         auth.getCurrentUser().delete();

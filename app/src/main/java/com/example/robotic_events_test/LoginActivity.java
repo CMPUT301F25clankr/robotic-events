@@ -14,6 +14,10 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+/**
+ * VIEW: Login - allows individuals to login to their accounts on the app. Accounts are assigned
+ * particular roles.
+ */
 public class LoginActivity extends AppCompatActivity {
 
     private FirebaseAuth auth;
@@ -47,11 +51,11 @@ public class LoginActivity extends AppCompatActivity {
         });
 
         adminButton.setOnClickListener(v -> {
-            // Replace the Toast with an Intent to the new activity
             startActivity(new Intent(this, AdminAccessActivity.class));
         });
     }
 
+    // Logs the user in based on their input to the fields.
     private void loginUser() {
         String email = emailInput.getText().toString().trim();
         String password = passwordInput.getText().toString().trim();
@@ -70,38 +74,47 @@ public class LoginActivity extends AppCompatActivity {
                         Toast.makeText(this, "Login failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
     }
 
+    // Gets user's role based on their account information; navigates them appropriately.
     private void fetchUserRoleAndProceed() {
         String userId = auth.getCurrentUser().getUid();
 
         db.collection("users").document(userId).get()
                 .addOnSuccessListener(document -> {
-                    // Firestore saves isOrganizer() as "organizer" field
-                    Boolean isOrganizerObj = document.getBoolean("organizer"); // Changed from "isOrganizer"
-                    boolean isOrganizer = (isOrganizerObj != null && isOrganizerObj);
+                    Boolean isBannedObj = document.getBoolean("banned");
+                    boolean isBanned = (isBannedObj != null && isBannedObj);
 
-                    // Save role in SharedPreferences
-                    SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
-                    prefs.edit().putBoolean("isOrganizer", isOrganizer).apply();
+                    if (isBanned) {
+                        startActivity(new Intent(LoginActivity.this, BannedActivity.class));
+                        finish();
+                    } else {
+                        // For any regular user login, clear admin status
+                        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+                        SharedPreferences.Editor editor = prefs.edit();
+                        editor.putBoolean("isAdmin", false); // CRITICAL FIX: Clear admin status
 
-                    goToMain();
+                        Boolean isOrganizerObj = document.getBoolean("organizer");
+                        boolean isOrganizer = (isOrganizerObj != null && isOrganizerObj);
+                        editor.putBoolean("isOrganizer", isOrganizer);
+
+                        editor.apply(); // Apply all changes
+                        goToMain();
+                    }
                 })
                 .addOnFailureListener(e -> {
-                    // Default to user if failure occurs
+                    // If fetching fails, default to a non-admin, non-organizer user
                     SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
-                    prefs.edit().putBoolean("isOrganizer", false).apply();
+                    prefs.edit()
+                        .putBoolean("isAdmin", false)
+                        .putBoolean("isOrganizer", false)
+                        .apply();
 
                     goToMain();
                 });
     }
 
-
+    // Navigates to MainActivity once login is completed successfully.
     private void goToMain() {
         startActivity(new Intent(LoginActivity.this, MainActivity.class));
         finish();
-    }
-
-    private void saveUserRole(boolean isOrganizer) {
-        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
-        prefs.edit().putBoolean("isOrganizer", isOrganizer).apply();
     }
 }
