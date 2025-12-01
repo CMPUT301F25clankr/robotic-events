@@ -12,7 +12,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.appbar.MaterialToolbar;
 
 /**
- Lets admin decide to manage users, events, notifications, pictures
+ VIEW: Lets admin decide to manage users, events, notifications, pictures; redirects based on their input
  */
 public class AdminDashboardActivity extends AppCompatActivity {
 

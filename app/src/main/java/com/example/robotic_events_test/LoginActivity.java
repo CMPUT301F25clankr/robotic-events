@@ -14,6 +14,10 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+/**
+ * VIEW: Login - allows individuals to login to their accounts on the app. Accounts are assigned
+ * particular roles.
+ */
 public class LoginActivity extends AppCompatActivity {
 
     private FirebaseAuth auth;
@@ -51,6 +55,7 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
+    // Logs the user in based on their input to the fields.
     private void loginUser() {
         String email = emailInput.getText().toString().trim();
         String password = passwordInput.getText().toString().trim();
@@ -69,6 +74,7 @@ public class LoginActivity extends AppCompatActivity {
                         Toast.makeText(this, "Login failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
     }
 
+    // Gets user's role based on their account information; navigates them appropriately.
     private void fetchUserRoleAndProceed() {
         String userId = auth.getCurrentUser().getUid();
 
@@ -106,6 +112,7 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
+    // Navigates to MainActivity once login is completed successfully.
     private void goToMain() {
         startActivity(new Intent(LoginActivity.this, MainActivity.class));
         finish();

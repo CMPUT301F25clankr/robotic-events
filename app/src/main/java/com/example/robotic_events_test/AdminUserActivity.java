@@ -8,7 +8,9 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 import java.util.List;
-/** displays the users in admin view*/
+/**
+ * VIEW: Displays the users in admin view
+ */
 public class AdminUserActivity extends AppCompatActivity {
 
     private RecyclerView usersRecyclerView;

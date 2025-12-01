@@ -14,7 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-/** lets the admin see all event images that were uploaded and allows for deletion*/
+/**
+ * VIEW: Lets the admin see all event images that were uploaded and allows for deletion
+ */
 public class ManageImagesActivity extends AppCompatActivity {
 
     private static final String TAG = "ManageImagesActivity";

@@ -109,6 +109,7 @@ public class LotteryResultActivity extends AppCompatActivity {
         loadLotteryResult();
     }
 
+    // Load lottery results for the event
     private void loadLotteryResult() {
         lotteryController.lotteryModel.getLatestLotteriesForEvent(eventId)
                 .addOnSuccessListener(results -> {
@@ -153,6 +154,7 @@ public class LotteryResultActivity extends AppCompatActivity {
                 });
     }
 
+    // Prepares and gives a downloadable CSV featuring information about waitlisted and enrolled users wrt. the current event
     private void prepareAndExportCsv() {
         if (currentResult == null) {
             Toast.makeText(this, "No data to export", Toast.LENGTH_SHORT).show();
