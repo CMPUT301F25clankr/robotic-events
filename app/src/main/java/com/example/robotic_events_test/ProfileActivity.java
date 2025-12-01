@@ -99,9 +99,22 @@ public class ProfileActivity extends AppCompatActivity {
 
     // Deletes account on button press when called
     private void deleteAccount() {
-        db.collection("users").document(uid).delete();
-        auth.getCurrentUser().delete();
-        finish();
-        startActivity(new Intent(this, LoginActivity.class));
+        db.collection("users").document(uid).delete()
+                .addOnSuccessListener(aVoid -> {
+                    auth.getCurrentUser().delete()
+                            .addOnCompleteListener(task -> {
+                                if (task.isSuccessful()) {
+                                    finishAffinity(); // Close all activities
+                                    Intent intent = new Intent(this, LoginActivity.class);
+                                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                    startActivity(intent);
+                                } else {
+                                    Toast.makeText(this, "Failed to delete authentication record.", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to delete user data.", Toast.LENGTH_SHORT).show();
+                });
     }
 }
