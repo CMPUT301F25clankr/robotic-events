@@ -19,6 +19,9 @@ public class Event implements Serializable {
     private String bannerUrl; // This is the new banner
     private double price;
 
+    private boolean geolocationRequired;
+    private double eventLatitude;
+    private double eventLongitude;
     public Event() {
         // Firestore requires a public no-argument constructor
     }
@@ -47,6 +50,9 @@ public class Event implements Serializable {
         this.bannerUrl = bannerUrl; // Assign bannerUrl
         this.price = price;
         this.status = "open";
+        this.geolocationRequired = false;
+        this.eventLatitude = 0.0;
+        this.eventLongitude = 0.0;
     }
 
     // --- Existing Getters and Setters ---
@@ -72,6 +78,13 @@ public class Event implements Serializable {
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public double getPrice() { return price; }
     public void setPrice(double price) { this.price = price; }
+    public boolean isGeolocationRequired() { return geolocationRequired; }
+    public void setGeolocationRequired(boolean geolocationRequired) { this.geolocationRequired = geolocationRequired; }
+    public double getEventLatitude() { return eventLatitude; }
+    public void setEventLatitude(double eventLatitude) { this.eventLatitude = eventLatitude; }
+    public double getEventLongitude() { return eventLongitude; }
+    public void setEventLongitude(double eventLongitude) { this.eventLongitude = eventLongitude; }
+
     public String getBannerUrl() { return bannerUrl; }
     public void setBannerUrl(String bannerUrl) { this.bannerUrl = bannerUrl; }
 }

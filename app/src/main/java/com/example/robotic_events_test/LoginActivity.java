@@ -47,7 +47,8 @@ public class LoginActivity extends AppCompatActivity {
         });
 
         adminButton.setOnClickListener(v -> {
-            Toast.makeText(this, "Admin feature not yet implemented", Toast.LENGTH_SHORT).show();
+            // Replace the Toast with an Intent to the new activity
+            startActivity(new Intent(this, AdminAccessActivity.class));
         });
     }
 

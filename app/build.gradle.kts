@@ -61,6 +61,12 @@ dependencies {
     implementation("androidx.navigation:navigation-fragment-ktx:2.8.4")
     implementation("androidx.navigation:navigation-ui-ktx:2.8.4")
     implementation(libs.activity)
+    implementation(libs.play.services.maps)
+    implementation(libs.play.services.location)
+// Google Maps
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+// Location Services
+    implementation("com.google.android.gms:play-services-location:21.0.1")
 
     implementation("com.google.firebase:firebase-storage:21.0.0")
     implementation("com.github.bumptech.glide:glide:4.16.0")

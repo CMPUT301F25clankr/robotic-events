@@ -30,23 +30,6 @@
                 app:titleTextColor="@android:color/white"
                 app:navigationIcon="@drawable/ic_back" />
 
-            <Button
-                android:id="@+id/viewLotteryResultsButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="View Lottery Results"
-                android:visibility="gone" />
-
-
-
-            <Button
-                android:id="@+id/runLotteryButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Run Lottery"
-                android:visibility="gone" />
-
-
             <ImageView
                 android:id="@+id/detailImage"
                 android:background="@color/cardview_shadow_start_color"
@@ -131,7 +114,8 @@
                         android:layout_marginLeft="8dp"
                         android:background="@android:color/holo_orange_dark"
                         android:gravity="center"
-                        android:text="Waitlisted\n0"
+                        android:text="Waitlisted
+0"
                         android:textColor="#455A64"
                         android:textSize="14sp"
                         android:textStyle="bold" />
@@ -142,7 +126,8 @@
                         android:layout_width="80dp"
                         android:layout_height="50dp"
                         android:gravity="center"
-                        android:text="Capacity\n999"
+                        android:text="Capacity
+999"
                         android:textColor="@android:color/white"
                         android:textStyle="bold"
                         android:textSize="14sp"
@@ -188,6 +173,54 @@
                 android:text="Description goes here"
                 android:layout_marginTop="16dp" />
 
+            <GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:columnCount="2"
+                android:alignmentMode="alignMargins"
+                android:useDefaultMargins="true"
+                >
+
+                <Button
+                    android:id="@+id/viewLotteryResultsButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="0.5"
+                    android:text="View Lottery Results"
+                    android:background="@drawable/non_rounded_button"
+                    android:visibility="gone" />
+
+                <Button
+                    android:id="@+id/viewMapButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="0.5"
+                    android:text="View Waitlist Map"
+                    android:visibility="gone"
+                    android:background="@drawable/non_rounded_button"
+                    />
+
+                <Button
+                    android:id="@+id/geolocationSettingsButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="0.5"
+                    android:text="Geolocation Settings"
+                    android:visibility="gone"
+                    android:background="@drawable/non_rounded_button"
+                    />
+
+                <Button
+                    android:id="@+id/runLotteryButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="0.5"
+                    android:text="Run Lottery"
+                    android:visibility="gone"
+                    android:background="@drawable/non_rounded_button"
+                    />
+
+            </GridLayout>
 
             <Button
                 android:id="@+id/joinLeaveWaitlistButton"
@@ -198,6 +231,18 @@
                 android:layout_marginTop="22dp"
                 android:backgroundTint="#008000"
                 android:textColor="@android:color/white" />
+
+            <Button
+                android:id="@+id/removeEventButton"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="Remove Event"
+                android:textSize="18sp"
+                android:layout_marginTop="22dp"
+                android:backgroundTint="@android:color/holo_red_dark"
+                android:textColor="@android:color/white"
+                android:visibility="gone"
+                tools:visibility="visible"/>
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>

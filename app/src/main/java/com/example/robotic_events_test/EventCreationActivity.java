@@ -12,7 +12,10 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.GridView;
 import android.widget.ProgressBar;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
@@ -46,6 +49,8 @@ public class EventCreationActivity extends AppCompatActivity {
     private Uri iconImageUri = null;
     private Uri bannerImageUri = null;
 
+    private String chosenCategory = "General";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,6 +82,9 @@ public class EventCreationActivity extends AppCompatActivity {
         uploadBannerButton = findViewById(R.id.uploadBannerButton);
         eventCreationConfirm = findViewById(R.id.eventCreationConfirm);
         progressBar = findViewById(R.id.createEventProgressBar);
+
+        RadioGroup radioGroup = findViewById(R.id.category_radio_group);
+        createRadioButtons(radioGroup);
     }
 
     private void openFileChooser(int requestCode) {
@@ -160,6 +168,7 @@ public class EventCreationActivity extends AppCompatActivity {
             long dateTime = calendar.getTimeInMillis();
             int eventCapacity = Integer.parseInt(eventCapacityStr);
             String organizerId = currentUser.getUid();
+            //String category = eventCategory;
 
             Event newEvent = new Event(
                     eventTitle,
@@ -168,7 +177,7 @@ public class EventCreationActivity extends AppCompatActivity {
                     eventCapacity,
                     0.0,
                     "Default Description",
-                    "General",
+                    chosenCategory,
                     organizerId,
                     finalIconUrl,
                     finalBannerUrl
@@ -202,5 +211,25 @@ public class EventCreationActivity extends AppCompatActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void createRadioButtons(RadioGroup radioGroup) {
+        String[] categories = {"Sports", "Art", "Food", "Games", "Community"};
+
+        for (String cat : categories) {
+            RadioButton radioButton = new RadioButton(this);
+            radioButton.setText(cat);
+            radioButton.setTextSize(16f);
+            radioButton.setPadding(10,10,10,10);
+            radioButton.setId(View.generateViewId());
+            radioGroup.addView(radioButton);
+        }
+
+        radioGroup.setOnCheckedChangeListener(((group, checkedId) -> {
+            RadioButton selectedButton = group.findViewById(checkedId);
+            if (selectedButton != null) {
+                chosenCategory = selectedButton.getText().toString();
+            }
+        }));
     }
 }

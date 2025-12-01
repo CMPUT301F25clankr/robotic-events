@@ -28,11 +28,6 @@ public class LotteryController {
 
     /**
      * Run lottery for an event.
-     * Only allowed if currentUserId == event.organizerId.
-     *
-     * @param eventId       Event to run lottery for
-     * @param currentUserId Logged-in user
-     * @return Task<Boolean> true if lottery ran, false otherwise
      */
     public Task<Boolean> runLottery(String eventId, String currentUserId) {
         if (eventId == null || eventId.isEmpty()
@@ -65,18 +60,13 @@ public class LotteryController {
                                 }
 
                                 int capacity = event.getTotalCapacity();
-                                // You might also track already accepted attendees; for now assume
-                                // everyone on waitlist is competing for all capacity.
-
                                 List<String> allUserIds = new ArrayList<>();
                                 for (WaitlistEntry e : entries) {
                                     allUserIds.add(e.getUserId());
                                 }
 
-                                // Shuffle for randomness
                                 Collections.shuffle(allUserIds);
 
-                                // Selected up to capacity
                                 List<String> selected = new ArrayList<>();
                                 List<String> notSelected = new ArrayList<>();
 
@@ -102,8 +92,21 @@ public class LotteryController {
                                                 Log.e(TAG, "Failed saving lottery", saveTask.getException());
                                                 return false;
                                             }
+                                            
+                                            // Calculate Expiry Time: 10% of remaining time
+                                            long currentTime = System.currentTimeMillis();
+                                            long eventTime = event.getDateTime();
+                                            long timeUntilEvent = eventTime - currentTime;
+                                            
+                                            long expiryTime = 0;
+                                            if (timeUntilEvent > 0) {
+                                                long allowedResponseTime = (long) (timeUntilEvent * 0.10);
+                                                expiryTime = currentTime + allowedResponseTime;
+                                            } else {
+                                                expiryTime = currentTime; 
+                                            }
 
-                                            // Create notifications for selected users
+                                            // Create notifications
                                             for (String userId : selected) {
                                                 Notifications notification = new Notifications(
                                                     true,
@@ -113,10 +116,10 @@ public class LotteryController {
                                                     System.currentTimeMillis(),
                                                     eventId
                                                 );
+                                                notification.setExpiryTimestamp(expiryTime);
                                                 db.collection("notifications").add(notification);
                                             }
 
-                                            // Create notifications for not selected users
                                             for (String userId : notSelected) {
                                                 Notifications notification = new Notifications(
                                                     false,
@@ -129,6 +132,10 @@ public class LotteryController {
                                                 db.collection("notifications").add(notification);
                                             }
 
+                                            // Close event
+                                            event.setStatus("closed");
+                                            eventModel.saveEvent(event);
+
                                             Log.d(TAG, "Lottery completed for event: " + eventId);
                                             return true;
                                         });
@@ -140,91 +147,133 @@ public class LotteryController {
         return runLottery(eventId, currentUserId);
     }
 
-    /**
-     * Handle logic when a user declines a spot.
-     * 1. Remove user from selected list (conceptually, waitlist entry removed by WaitlistController)
-     * 2. Find a replacement from the pool of non-selected users.
-     *
-     * @param eventId  The event ID
-     * @param declinedUserId The ID of the user who declined
-     * @return Task<Boolean> indicating success/failure of finding replacement
-     */
     public Task<Boolean> processDecline(String eventId, String declinedUserId) {
         if (eventId == null || declinedUserId == null) {
             return Tasks.forResult(false);
         }
 
-        // 1. Get the event to get capacity and organizer ID (for notification sender)
         return eventModel.getEvent(eventId).continueWithTask(eventTask -> {
             Event event = eventTask.getResult();
             if (event == null) return Tasks.forResult(false);
 
             String organizerId = event.getOrganizerId();
 
-            // 2. Get current waitlist (user declining should have been removed already or will be)
-            // We need to find someone who is NOT selected yet.
-            // For simplicity, let's just look at all waitlist entries.
-            // The declined user is supposedly removed from waitlist before this call.
-            
             return waitlistModel.getWaitlistEntriesByEvent(eventId).continueWithTask(waitlistTask -> {
                 List<WaitlistEntry> entries = waitlistTask.getResult();
-                if (entries == null || entries.isEmpty()) {
-                    Log.d(TAG, "No users left in waitlist to replace declined user.");
-                    return Tasks.forResult(true); // Nothing to do, but not an error
-                }
-
-                // In a real app, we need to know who was ALREADY selected to not select them again.
-                // We can fetch the latest LotteryResult.
+                
                 return lotteryModel.getLatestLotteriesForEvent(eventId).continueWithTask(lotteryTask -> {
                     List<LotteryResult> lotteries = lotteryTask.getResult();
-                    List<String> alreadySelectedIds = new ArrayList<>();
-                    
-                    if (lotteries != null && !lotteries.isEmpty()) {
-                        LotteryResult lastResult = lotteries.get(0);
-                        if (lastResult.getSelectedUserIds() != null) {
-                            alreadySelectedIds.addAll(lastResult.getSelectedUserIds());
-                        }
+                    if (lotteries == null || lotteries.isEmpty()) {
+                         return Tasks.forResult(false);
                     }
                     
-                    // Filter entries to find candidates (those NOT in alreadySelectedIds)
+                    LotteryResult lastResult = lotteries.get(0);
+                    List<String> selectedIds = lastResult.getSelectedUserIds();
+                    List<String> declinedIds = lastResult.getDeclinedUserIds();
+                    if (declinedIds == null) declinedIds = new ArrayList<>();
+                    
+                    if (selectedIds != null && selectedIds.contains(declinedUserId)) {
+                        selectedIds.remove(declinedUserId);
+                    }
+                    if (!declinedIds.contains(declinedUserId)) {
+                        declinedIds.add(declinedUserId);
+                    }
+                    
                     List<String> candidates = new ArrayList<>();
-                    for (WaitlistEntry entry : entries) {
-                        if (!alreadySelectedIds.contains(entry.getUserId())) {
-                            candidates.add(entry.getUserId());
+                    List<String> finalSelectedIds = selectedIds != null ? selectedIds : new ArrayList<>();
+                    List<String> finalDeclinedIds = declinedIds;
+                    List<String> finalAcceptedIds = lastResult.getAcceptedUserIds() != null ? lastResult.getAcceptedUserIds() : new ArrayList<>();
+
+                    if (entries != null) {
+                        for (WaitlistEntry entry : entries) {
+                            String uid = entry.getUserId();
+                            if (!finalSelectedIds.contains(uid) && !finalDeclinedIds.contains(uid) && !finalAcceptedIds.contains(uid)) {
+                                candidates.add(uid);
+                            }
                         }
                     }
 
-                    if (candidates.isEmpty()) {
-                         Log.d(TAG, "No candidates available to fill the spot.");
-                         return Tasks.forResult(true);
+                    boolean replacementFound = false;
+                    String luckyWinnerId = null;
+
+                    if (!candidates.isEmpty()) {
+                        Collections.shuffle(candidates);
+                        luckyWinnerId = candidates.get(0);
+                        finalSelectedIds.add(luckyWinnerId);
+                        replacementFound = true;
+                    }
+                    
+                    // Update object
+                    lastResult.setSelectedUserIds(finalSelectedIds);
+                    lastResult.setDeclinedUserIds(finalDeclinedIds);
+                    
+                    // Use update() instead of set() for safety
+                    String docId = lastResult.getId();
+                    if (docId != null) {
+                        db.collection("lotteries").document(docId).update(
+                            "selectedUserIds", finalSelectedIds,
+                            "declinedUserIds", finalDeclinedIds
+                        );
                     }
 
-                    // 3. Pick one random candidate
-                    Collections.shuffle(candidates);
-                    String luckyWinnerId = candidates.get(0);
-
-                    // 4. Notify the winner
-                    Notifications notification = new Notifications(
-                            true,
-                            "You have been selected from the waitlist for: " + event.getTitle(),
-                            organizerId, // Sent by organizer (system behalf)
-                            luckyWinnerId,
-                            System.currentTimeMillis(),
-                            eventId
-                    );
+                    if (replacementFound && luckyWinnerId != null) {
+                        // Expiry logic...
+                        long currentTime = System.currentTimeMillis();
+                        long eventTime = event.getDateTime();
+                        long timeUntilEvent = eventTime - currentTime;
+                        long expiryTime = (timeUntilEvent > 0) ? currentTime + (long)(timeUntilEvent * 0.10) : currentTime;
+                        
+                        Notifications notification = new Notifications(
+                                true,
+                                "You have been selected from the waitlist for: " + event.getTitle(),
+                                organizerId, 
+                                luckyWinnerId,
+                                System.currentTimeMillis(),
+                                eventId
+                        );
+                        notification.setExpiryTimestamp(expiryTime);
+                        
+                        return db.collection("notifications").add(notification).continueWith(nTask -> true);
+                    }
                     
-                    return db.collection("notifications").add(notification).continueWith(nTask -> {
-                         if (nTask.isSuccessful()) {
-                             Log.d(TAG, "Replacement found and notified: " + luckyWinnerId);
-                             
-                             // OPTIONAL: Update LotteryResult to include this new person? 
-                             // For now, we just notify them.
-                             return true;
-                         }
-                         return false;
-                    });
+                    return Tasks.forResult(replacementFound);
                 });
             });
+        });
+    }
+
+    public Task<Boolean> processAccept(String eventId, String acceptedUserId) {
+        if (eventId == null || acceptedUserId == null) {
+            return Tasks.forResult(false);
+        }
+
+        return lotteryModel.getLatestLotteriesForEvent(eventId).continueWithTask(lotteryTask -> {
+            List<LotteryResult> lotteries = lotteryTask.getResult();
+            if (lotteries == null || lotteries.isEmpty()) {
+                 return Tasks.forResult(false);
+            }
+            
+            LotteryResult lastResult = lotteries.get(0);
+            List<String> selectedIds = lastResult.getSelectedUserIds();
+            List<String> acceptedIds = lastResult.getAcceptedUserIds();
+            if (acceptedIds == null) acceptedIds = new ArrayList<>();
+            
+            if (selectedIds != null && selectedIds.contains(acceptedUserId)) {
+                selectedIds.remove(acceptedUserId);
+            }
+            if (!acceptedIds.contains(acceptedUserId)) {
+                acceptedIds.add(acceptedUserId);
+            }
+            
+            String docId = lastResult.getId();
+            if (docId != null) {
+                // Use update() for specific fields
+                return db.collection("lotteries").document(docId)
+                        .update("selectedUserIds", selectedIds, "acceptedUserIds", acceptedIds)
+                        .continueWith(t -> true);
+            }
+            
+            return Tasks.forResult(false);
         });
     }
 }
