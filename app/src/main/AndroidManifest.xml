@@ -76,6 +76,9 @@
             android:name=".ManageImagesActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".BannedActivity"
+            android:exported="false" />
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
