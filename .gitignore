@@ -9,3 +9,4 @@ app/build.gradle.kts
 local.properties
 local.properties
 app/build.gradle.kts
+.idea/caches/deviceStreaming.xml
