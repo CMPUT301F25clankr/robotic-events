@@ -18,9 +18,9 @@ public class UserTest {
         assertEquals("uid123", user.getUid());
         assertEquals("John Doe", user.getName());
         assertEquals("john@example.com", user.getEmail());
-        assertFalse(user.isOrganizer()); // Default
-        assertTrue(user.isNotificationsEnabled()); // Default
-        assertFalse(user.isBanned()); // Default
+        assertFalse(user.isOrganizer()); //default
+        assertTrue(user.isNotificationsEnabled()); //default
+        assertFalse(user.isBanned()); //default
     }
 
     @Test

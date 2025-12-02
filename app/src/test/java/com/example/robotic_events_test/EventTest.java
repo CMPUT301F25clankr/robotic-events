@@ -13,7 +13,7 @@ public class EventTest {
     @Before
     public void setUp() {
         timestamp = System.currentTimeMillis();
-        deadline = timestamp + 86400000; // 1 day later
+        deadline = timestamp + 86400000; //1 day later
         event = new Event(
                 "Test Event", 
                 "Test Location", 
@@ -42,7 +42,7 @@ public class EventTest {
         assertEquals("http://image.url/icon", event.getImageUrl());
         assertEquals("http://image.url/banner", event.getBannerUrl());
         assertEquals(deadline, event.getRegistrationDeadline());
-        assertEquals("open", event.getStatus()); // Default status
+        assertEquals("open", event.getStatus());
     }
 
     @Test
