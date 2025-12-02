@@ -13,6 +13,8 @@ import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
+import android.text.TextUtils;
+import com.bumptech.glide.Glide;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -232,6 +234,7 @@ public class EventDetailActivity extends AppCompatActivity {
         TextView detailCategory = findViewById(R.id.detailCategory);
         TextView detailOrganizer = findViewById(R.id.detailOrganizer);
         TextView detailDescription = findViewById(R.id.detailDescription);
+        ImageView detailImage = findViewById(R.id.detailImage);
 
         detailTitle.setText(event.getTitle());
         detailWhen.setText(DateFormat.format("MMM dd, yyyy h:mm a", event.getDateTime()));
@@ -241,6 +244,24 @@ public class EventDetailActivity extends AppCompatActivity {
         detailCategory.setText(event.getCategory());
         detailOrganizer.setText("Organizer ID: " + event.getOrganizerId());
         detailDescription.setText(event.getDescription() != null ? event.getDescription() : "No description available");
+
+        String bannerUrl = TextUtils.isEmpty(event.getBannerUrl()) ? Constants.DEFAULT_EVENT_BANNER_URL : event.getBannerUrl();
+
+
+
+        Glide.with(this)
+
+
+                .load(bannerUrl)
+
+
+                .placeholder(R.drawable.ic_launcher_background) // A default placeholder
+
+
+                .error(Constants.DEFAULT_EVENT_BANNER_URL) // Fallback on error
+
+
+                .into(detailImage);
         
         // Registration Deadline Logic
         if (event.getRegistrationDeadline() > 0) {
